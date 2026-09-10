@@ -1,0 +1,34 @@
+// Whisper Split - Level 1 Debt Contract
+// PUBLIC LEDGER STATE:
+// - settled: Boolean (indicates if the debt has been marked settled on-chain)
+// - settlementCount: Counter (tracks total successful settlements)
+//
+// PRIVATE WITNESS & INPUT:
+// - getOwedAmount(): Uint<64> (retrieved privately from local witness state)
+// - paidAmount: Uint<64> (passed into settleDebt circuit as private witness input)
+//
+// DELIBERATE DISCLOSURE:
+// - disclose(isPaid): Exposes ONLY the boolean result of (paidAmount == owedAmount)
+//   to the public ledger transcript. Neither paidAmount nor owedAmount are disclosed on-chain.
+
+pragma language_version 0.26;
+
+import CompactStandardLibrary;
+
+export ledger settled: Boolean;
+export ledger settlementCount: Counter;
+
+witness getOwedAmount(): Uint<64>;
+
+export circuit settleDebt(paidAmount: Uint<64>): [] {
+  assert(!settled, "Debt is already settled");
+  const owed = getOwedAmount();
+  const isPaid = (paidAmount == owed);
+  
+  if (disclose(isPaid)) {
+    settled = true;
+    settlementCount.increment(1);
+  } else {
+    assert(false, "Paid amount does not match owed amount");
+  }
+}

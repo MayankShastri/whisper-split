@@ -1,4 +1,15 @@
-node_modules/
-managed/
+.env
+.env.*
 *.env
 .env*
+node_modules/
+managed/
+dist/
+Design References/
+LEVEL_1_SUMMARY.md
+midnight_prompts.md
+opencode.json
+project context.md
+
+# graft's local graph cache — regenerable, not committed (run `graft build`).
+graft/

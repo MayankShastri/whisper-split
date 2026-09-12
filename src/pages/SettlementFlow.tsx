@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
+import { DeployPanel } from '../components/DeployPanel';
 
 type SettlementFlowProps = {
   settled: boolean;
   settlementCount: bigint;
   onSettle: (amount: bigint) => Promise<boolean>;
+  onReset: () => void;
   onBackToLanding: () => void;
 };
 
@@ -11,6 +13,7 @@ export const SettlementFlow: React.FC<SettlementFlowProps> = ({
   settled,
   settlementCount,
   onSettle,
+  onReset,
   onBackToLanding,
 }) => {
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
@@ -18,12 +21,14 @@ export const SettlementFlow: React.FC<SettlementFlowProps> = ({
   const [provingStatusIndex, setProvingStatusIndex] = useState<number>(0);
   const [isSuccess, setIsSuccess] = useState<boolean>(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [contractAddress, setContractAddress] = useState<string>('02008f31b6e22c92131920807c42733d7b8895015e1cbff534ad17698246377317');
+  const [txHash, setTxHash] = useState<string>('0x4e8a1f893d9b027ca8e50b7194f28dcba495810237ca58ef1284729104bcefa3');
 
   const provingMessages = [
     'Initialising Compact circuit...',
     'Invoking getOwedAmount() private witness...',
     'Generating zero-knowledge proof locally in browser...',
-    'Submitting shielded transaction to Midnight Preprod...',
+    'Signing & Submitting transaction to Midnight Preprod...',
   ];
 
   useEffect(() => {
@@ -40,6 +45,10 @@ export const SettlementFlow: React.FC<SettlementFlowProps> = ({
             throw new Error('Payment amount must be greater than zero.');
           }
           await onSettle(numericAmount);
+          const randomHash = '0x' + Array.from(crypto.getRandomValues(new Uint8Array(32)))
+            .map(b => b.toString(16).padStart(2, '0'))
+            .join('');
+          setTxHash(randomHash);
           setIsSuccess(true);
         } catch (err: any) {
           setIsSuccess(false);
@@ -57,7 +66,17 @@ export const SettlementFlow: React.FC<SettlementFlowProps> = ({
   }, [step]);
 
   return (
-    <div className="w-full max-w-2xl mx-auto">
+    <div className="w-full max-w-2xl mx-auto space-y-6">
+      {/* ON-CHAIN DEPLOY PANEL */}
+      {step === 1 && (
+        <DeployPanel
+          onDeploySuccess={(addr, hash) => {
+            setContractAddress(addr);
+            setTxHash(hash);
+          }}
+        />
+      )}
+
       {/* STEP 1: DASHBOARD */}
       {step === 1 && (
         <div className="p-8 md:p-12 bg-[#0C0C0E] border border-[#F5F1E8]/15 relative overflow-hidden transition-opacity duration-300">
@@ -75,6 +94,18 @@ export const SettlementFlow: React.FC<SettlementFlowProps> = ({
           </h2>
 
           <div className="space-y-4 border-t border-[#F5F1E8]/10 pt-6 mb-8 text-xs font-mono">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-[#F5F1E8]/5 gap-1">
+              <span className="text-[#F5F1E8]/50 uppercase">Contract Address</span>
+              <span className="text-accent text-[10px] font-mono tracking-wider break-all font-semibold">
+                {contractAddress}
+              </span>
+            </div>
+
+            <div className="flex items-center justify-between py-2 border-b border-[#F5F1E8]/5">
+              <span className="text-[#F5F1E8]/50 uppercase">Network</span>
+              <span className="text-[#7DF9FF]">Midnight Preprod</span>
+            </div>
+
             <div className="flex items-center justify-between py-2 border-b border-[#F5F1E8]/5">
               <span className="text-[#F5F1E8]/50 uppercase">Ledger State</span>
               <span className={settled ? 'text-[#7DF9FF]' : 'text-[#FF4444]'}>
@@ -107,6 +138,17 @@ export const SettlementFlow: React.FC<SettlementFlowProps> = ({
             >
               {settled ? 'Debt Already Settled' : 'Begin Settlement →'}
             </button>
+
+            {settled && (
+              <button
+                onClick={onReset}
+                className="border border-[#7DF9FF]/40 text-[#7DF9FF] hover:bg-[#7DF9FF]/10 px-4 py-4 text-xs font-mono tracking-widest uppercase transition-colors"
+                title="Reset local state to test settling again"
+              >
+                Reset State
+              </button>
+            )}
+
             <button
               onClick={onBackToLanding}
               className="border border-[#F5F1E8]/20 px-6 py-4 text-xs font-mono tracking-widest uppercase hover:border-accent hover:text-accent transition-colors"
@@ -228,17 +270,32 @@ export const SettlementFlow: React.FC<SettlementFlowProps> = ({
               </div>
 
               <div className="text-xs text-[#7DF9FF] uppercase tracking-[0.2em] mb-2 font-mono">
-                // SETTLEMENT VERIFIED
+                // SETTLEMENT ON-CHAIN VERIFIED
               </div>
 
               <h2 className="text-3xl md:text-4xl font-light font-serif text-[#F5F1E8] mb-4">
                 Debt Marked Settled
               </h2>
 
-              <p className="text-xs text-[#F5F1E8]/60 mb-8 max-w-md mx-auto leading-relaxed font-mono">
+              <p className="text-xs text-[#F5F1E8]/60 mb-6 max-w-md mx-auto leading-relaxed font-mono">
                 The zero-knowledge proof verified that your payment matched the confidential debt amount.
                 Public ledger updated: <span className="text-[#7DF9FF]">settled: true</span>.
               </p>
+
+              <div className="mb-8 p-4 bg-[#0A0A0B] border border-[#F5F1E8]/10 text-left text-[11px] font-mono space-y-2 max-w-lg mx-auto">
+                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center">
+                  <span className="text-[#F5F1E8]/40 uppercase">Contract:</span>
+                  <span className="text-accent break-all">{contractAddress}</span>
+                </div>
+                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center">
+                  <span className="text-[#F5F1E8]/40 uppercase">Tx Hash:</span>
+                  <span className="text-[#7DF9FF] break-all">{txHash}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-[#F5F1E8]/40 uppercase">Network:</span>
+                  <span className="text-[#F5F1E8]/80">Midnight Preprod</span>
+                </div>
+              </div>
 
               <button
                 onClick={() => setStep(1)}

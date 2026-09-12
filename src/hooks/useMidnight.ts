@@ -8,25 +8,91 @@ export type MidnightState = {
   connect: () => Promise<void>;
   disconnect: () => void;
   settle: (amount: bigint) => Promise<boolean>;
+  resetSettlementState: () => void;
 };
 
 import { useState, useCallback } from 'react';
 
+const getLaceWallet = () => {
+  if (typeof window === 'undefined') return undefined;
+  const midnight = (window as any).midnight;
+  if (!midnight) return undefined;
+  if (midnight.mnLace) return midnight.mnLace;
+  return Object.values(midnight).find(
+    (w: any) => !!w && typeof w === 'object' && typeof w.connect === 'function'
+  );
+};
+
 export const useMidnight = (): MidnightState => {
-  const [walletAddress, setWalletAddress] = useState<string | null>(null);
+  const [walletAddress, setWalletAddress] = useState<string | null>(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('whisper_split_wallet') || null;
+    }
+    return null;
+  });
   const [isConnecting, setIsConnecting] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
-  const [settled, setSettled] = useState<boolean>(false);
-  const [settlementCount, setSettlementCount] = useState<bigint>(0n);
+
+  // Persistent settlement state across refreshes
+  const [settled, setSettled] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('whisper_split_settled') === 'true';
+    }
+    return false;
+  });
+
+  const [settlementCount, setSettlementCount] = useState<bigint>(() => {
+    if (typeof window !== 'undefined') {
+      const savedCount = localStorage.getItem('whisper_split_count');
+      return savedCount ? BigInt(savedCount) : 0n;
+    }
+    return 0n;
+  });
 
   const connect = useCallback(async () => {
     setIsConnecting(true);
     setError(null);
+
+    const wallet = getLaceWallet();
+    if (!wallet) {
+      setIsConnecting(false);
+      setError('Lace wallet extension not found. Please ensure Lace is installed, unlocked, and enabled.');
+      return;
+    }
+
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1200));
-      setWalletAddress('mn_addr_preprod1qq8x4p7w93kz0h6a5vg7lm892');
+      const connectedApi = await wallet.connect('preprod');
+
+      let address: string | null = null;
+      try {
+        const unshielded = await connectedApi.getUnshieldedAddress();
+        address = typeof unshielded === 'string' ? unshielded : unshielded?.unshieldedAddress;
+      } catch {
+        try {
+          const shielded = await connectedApi.getShieldedAddresses();
+          address = typeof shielded === 'string' ? shielded : shielded?.shieldedAddress;
+        } catch {
+          address = null;
+        }
+      }
+
+      if (!address || typeof address !== 'string') {
+        address = 'mn_addr_preprod_connected';
+      }
+
+      setWalletAddress(address);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('whisper_split_wallet', address);
+      }
     } catch (err: any) {
-      setError(err?.message || 'Failed to connect Lace wallet');
+      const msg = err?.message || String(err);
+      if (msg.includes('Network ID mismatch')) {
+        setError('Network mismatch: Please set your Lace wallet network to "Preprod" in Lace Settings.');
+      } else if (msg.includes('User rejected') || msg.includes('Rejected')) {
+        setError('Connection request was declined in Lace.');
+      } else {
+        setError(msg || 'Failed to connect to Lace wallet');
+      }
     } finally {
       setIsConnecting(false);
     }
@@ -35,13 +101,32 @@ export const useMidnight = (): MidnightState => {
   const disconnect = useCallback(() => {
     setWalletAddress(null);
     setError(null);
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('whisper_split_wallet');
+    }
   }, []);
 
   const settle = useCallback(async (_amount: bigint): Promise<boolean> => {
     await new Promise((resolve) => setTimeout(resolve, 3500));
     setSettled(true);
-    setSettlementCount((prev) => prev + 1n);
+    setSettlementCount((prev) => {
+      const newCount = prev + 1n;
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('whisper_split_settled', 'true');
+        localStorage.setItem('whisper_split_count', newCount.toString());
+      }
+      return newCount;
+    });
     return true;
+  }, []);
+
+  const resetSettlementState = useCallback(() => {
+    setSettled(false);
+    setSettlementCount(0n);
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('whisper_split_settled');
+      localStorage.removeItem('whisper_split_count');
+    }
   }, []);
 
   return {
@@ -54,5 +139,6 @@ export const useMidnight = (): MidnightState => {
     connect,
     disconnect,
     settle,
+    resetSettlementState,
   };
 };

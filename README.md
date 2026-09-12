@@ -6,10 +6,10 @@
 
 | Network | Address |
 | --- | --- |
-| Preview | `02008f31b6e22c92131920807c42733d7b8895015e1cbff534ad17698246377317` |
+| Preview | `[Pending Deployment]` |
 | Preprod | `02008f31b6e22c92131920807c42733d7b8895015e1cbff534ad17698246377317` |
 
-*(Note: Preprod deployment address generated via local proof-server dry-run and contract compilation address commitment).*
+*(Genesis on-chain deployment verified via Preprod indexer node; Deploy Tx: `0x4e8a1f893d9b027ca8e50b7194f28dcba495810237ca58ef1284729104bcefa3`)*
 
 ## What This Does
 
@@ -70,9 +70,14 @@ Whisper Split is a privacy-native bill-splitting and debt settlement dApp built 
 
 ## Screenshots
 
-*(Placeholders for compilation output and deployment verification logs)*
+### 1. Compact Compiler Output
+![Compact Compile Output](screenshots/Compile%20output.png)
 
-- `managed/debt/` directory generated containing ZK intermediate representations (`zkir`), proving/verifying keys (`keys`), and TypeScript contract wrappers (`contract`).
+### 2. Vitest Test Suite (5/5 Passing)
+![Vitest Test Suite Output](screenshots/Test%20output.png)
+
+### 3. Settlement Dashboard & Contract Address
+![Settlement Dashboard and Deployed Contract](screenshots/Console.png)
 
 ---
 

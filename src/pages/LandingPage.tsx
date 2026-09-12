@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
+import gsap from 'gsap';
 
 type LandingPageProps = {
   onStartSettlement: () => void;
@@ -11,152 +12,212 @@ export const LandingPage: React.FC<LandingPageProps> = ({
   isConnected,
   onConnect,
 }) => {
+  const headingWord1Ref = useRef<HTMLSpanElement>(null);
+  const headingWord2Ref = useRef<HTMLSpanElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const metaBadgeRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    // 1. Heading masked word-reveal animation with blur-in from reference
+    const words = [headingWord1Ref.current, headingWord2Ref.current].filter(Boolean);
+    if (words.length > 0) {
+      gsap.fromTo(
+        words,
+        { yPercent: 115, opacity: 0, filter: 'blur(10px)' },
+        {
+          yPercent: 0,
+          opacity: 1,
+          filter: 'blur(0px)',
+          duration: 1.1,
+          ease: 'power4.out',
+          stagger: 0.15,
+          delay: 0.1,
+        }
+      );
+    }
+
+    // 2. CTA button slide + blur-in entrance from reference
+    if (buttonRef.current) {
+      gsap.fromTo(
+        buttonRef.current,
+        { opacity: 0, y: 25, scale: 0.95, filter: 'blur(6px)' },
+        {
+          opacity: 1,
+          y: 0,
+          scale: 1,
+          filter: 'blur(0px)',
+          duration: 0.9,
+          ease: 'power3.out',
+          delay: 0.35,
+        }
+      );
+    }
+
+    // 3. Metadata badge slide + blur-in from reference
+    if (metaBadgeRef.current) {
+      gsap.fromTo(
+        metaBadgeRef.current,
+        { opacity: 0, y: 20, filter: 'blur(6px)' },
+        {
+          opacity: 1,
+          y: 0,
+          filter: 'blur(0px)',
+          duration: 0.9,
+          ease: 'power3.out',
+          delay: 0.45,
+        }
+      );
+    }
+  }, []);
+
   return (
-    <div className="space-y-32">
+    <div className="space-y-0 w-full">
       {/* 1. HERO SECTION */}
-      <section className="relative py-12 flex flex-col justify-center items-start max-w-5xl">
-        <div className="text-xs text-accent uppercase tracking-[0.2em] mb-6 font-mono">
+      <section className="relative pt-8 pb-16 flex flex-col justify-center items-start w-full border-b border-[#F5F1E8]/10">
+        <div className="text-xs text-accent uppercase tracking-[0.2em] mb-4 font-mono">
           // 01 — ZERO-KNOWLEDGE DEBT SETTLEMENT
         </div>
 
-        <h1 className="text-5xl md:text-7xl lg:text-8xl font-light tracking-tighter font-serif text-[#F5F1E8] leading-[0.95] mb-8">
-          Settle debts.<br />
-          <span className="italic text-[#F5F1E8]/90">Reveal nothing.</span>
+        {/* Headings with masked word reveal */}
+        <h1 className="text-5xl md:text-8xl lg:text-9xl font-light tracking-tighter font-serif text-[#F5F1E8] leading-[0.9] mb-8">
+          <span className="inline-block overflow-hidden align-bottom">
+            <span ref={headingWord1Ref} className="inline-block">
+              Sound,
+            </span>
+          </span>
+          <br />
+          <span className="inline-block overflow-hidden align-bottom">
+            <span ref={headingWord2Ref} className="inline-block italic text-[#F5F1E8]/90">
+              before silence.
+            </span>
+          </span>
         </h1>
 
-        <p className="max-w-xl text-xs md:text-sm leading-relaxed text-[#F5F1E8]/60 font-mono mb-10">
-          Whisper Split enables confidential expense balancing on the Midnight blockchain.
-          Prove full debt settlement using zero-knowledge circuits without disclosing amounts or personal financial ledgers.
-        </p>
+        <div className="mt-4 flex flex-col md:flex-row md:items-center gap-8 md:gap-12 w-full">
+          <div>
+            <button
+              ref={buttonRef}
+              onClick={isConnected ? onStartSettlement : onConnect}
+              className="group relative inline-flex items-center justify-center bg-accent text-[#0A0A0B] font-semibold text-xs tracking-widest uppercase px-8 py-4 overflow-hidden transition-all duration-300 hover:bg-accent/90 shadow-[inset_0_1px_0_rgba(255,255,255,0.3)] cursor-pointer"
+            >
+              {isConnected ? 'Open Settlement Console →' : 'Connect Lace & Settle →'}
+            </button>
+          </div>
 
-        <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center w-full">
-          <button
-            onClick={isConnected ? onStartSettlement : onConnect}
-            className="group relative inline-flex items-center justify-center bg-accent text-[#0A0A0B] font-semibold text-xs tracking-widest uppercase px-8 py-4 overflow-hidden transition-all duration-300 hover:bg-accent/90 shadow-[inset_0_1px_0_rgba(255,255,255,0.3)] cursor-pointer"
-          >
-            {isConnected ? 'Open Settlement Console →' : 'Connect Lace & Settle →'}
-          </button>
-
-          <a
-            href="#protocol"
-            className="inline-flex items-center justify-center border border-[#F5F1E8]/20 px-6 py-4 text-xs font-mono tracking-widest uppercase transition-all duration-300 hover:border-accent hover:text-accent"
-          >
-            How it Works
-          </a>
+          <div ref={metaBadgeRef} className="max-w-md text-xs leading-relaxed text-[#F5F1E8]/60 font-mono">
+            <span className="text-[#F5F1E8] font-mono block mb-1">
+              v1.0 — Confidential Ledger State.
+            </span>
+            Settle shared expenses directly on Midnight blockchain. Validates payment equality in
+            zero-knowledge without broadcasting balances.
+          </div>
         </div>
 
         {/* Hero Footer Metrics */}
         <div className="mt-16 w-full flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-t border-[#F5F1E8]/10 pt-6 text-[10px] text-[#F5F1E8]/40 font-mono uppercase tracking-widest">
-          <div>PROOF TYPE: <span className="text-accent">ZK-SNARK COMPACT</span></div>
-          <div>AMOUNT DISCLOSED: <span className="text-[#7DF9FF]">0.00 (SHIELDED)</span></div>
-          <div>NETWORK: <span className="text-[#F5F1E8]">MIDNIGHT PREPROD</span></div>
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6">
+            <div>PROOF TYPE: <span className="text-accent">ZK-SNARK COMPACT</span></div>
+            <div className="hidden sm:block text-[#F5F1E8]/20">|</div>
+            <div>DISCLOSED: <span className="text-[#7DF9FF]">0.00 (SHIELDED)</span></div>
+            <div className="hidden sm:block text-[#F5F1E8]/20">|</div>
+            <div>NETWORK: <span className="text-[#F5F1E8]/60">MIDNIGHT PREPROD</span></div>
+          </div>
+          <div className="flex items-center gap-2 mt-2 sm:mt-0">
+            <span className="w-2 h-2 rounded-full bg-[#7DF9FF] animate-pulse"></span>
+            SYSTEM STATUS: ONLINE
+          </div>
         </div>
       </section>
 
-      {/* 2. HOW IT WORKS */}
-      <section id="protocol" className="space-y-12 scroll-mt-24">
-        <div className="border-b border-[#F5F1E8]/10 pb-4">
-          <span className="text-xs text-accent uppercase tracking-[0.2em] font-mono">
-            // 02 — SETTLEMENT PROTOCOL
-          </span>
-          <h2 className="text-3xl md:text-4xl font-serif text-[#F5F1E8] font-light mt-1">
-            Privacy-First Lifecycle
-          </h2>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {/* Card 1 */}
-          <div className="p-8 bg-[#0C0C0E] border border-[#F5F1E8]/15 relative overflow-hidden flex flex-col justify-between min-h-[260px]">
-            <div className="absolute top-0 left-0 w-2 h-2 border-b border-r border-[#F5F1E8]/30"></div>
-            <div className="absolute top-0 right-0 w-2 h-2 border-b border-l border-[#F5F1E8]/30"></div>
-            <div className="absolute bottom-0 left-0 w-2 h-2 border-t border-r border-[#F5F1E8]/30"></div>
-            <div className="absolute bottom-0 right-0 w-2 h-2 border-t border-l border-[#F5F1E8]/30"></div>
-
-            <div>
-              <div className="text-[10px] text-accent uppercase tracking-widest font-mono mb-4">
-                01 // CONNECT
-              </div>
-              <h3 className="text-xl font-serif font-light text-[#F5F1E8] mb-3">
-                Lace Wallet Sync
-              </h3>
-              <p className="text-xs text-[#F5F1E8]/60 font-mono leading-relaxed">
-                Connect your pre-funded Midnight Lace wallet. Identity and balances remain isolated locally.
-              </p>
-            </div>
-            <div className="mt-6 pt-4 border-t border-[#F5F1E8]/5 flex items-center justify-between text-[9px] text-[#F5F1E8]/30 font-mono">
-              <span>LOCAL IDENTITY</span>
-              <span className="text-[#7DF9FF]">SHIELDED</span>
-            </div>
+      {/* 2. ARCHITECTURE OVERVIEW */}
+      <section id="protocol" className="border-b border-[#F5F1E8]/10 py-16 scroll-mt-24 w-full">
+        <div>
+          <div className="text-xs text-accent uppercase tracking-[0.2em] mb-12">
+            // 02 — ARCHITECTURE OVERVIEW
           </div>
 
-          {/* Card 2 */}
-          <div className="p-8 bg-[#0C0C0E] border border-[#F5F1E8]/15 relative overflow-hidden flex flex-col justify-between min-h-[260px]">
-            <div className="absolute top-0 left-0 w-2 h-2 border-b border-r border-[#F5F1E8]/30"></div>
-            <div className="absolute top-0 right-0 w-2 h-2 border-b border-l border-[#F5F1E8]/30"></div>
-            <div className="absolute bottom-0 left-0 w-2 h-2 border-t border-r border-[#F5F1E8]/30"></div>
-            <div className="absolute bottom-0 right-0 w-2 h-2 border-t border-l border-[#F5F1E8]/30"></div>
-
-            <div>
-              <div className="text-[10px] text-accent uppercase tracking-widest font-mono mb-4">
-                02 // VALIDATE
+          <div className="grid grid-cols-1 lg:grid-cols-3 divide-y lg:divide-y-0 lg:divide-x divide-[#F5F1E8]/10">
+            {/* Column 01 */}
+            <div className="py-8 lg:py-0 lg:px-8 first:pl-0 last:pr-0 flex flex-col justify-between min-h-[260px]">
+              <div>
+                <div className="text-xs text-[#F5F1E8]/40 mb-6 font-mono">01 // LOCAL-SYNC</div>
+                <h3 className="text-xl font-light text-[#F5F1E8] font-serif mb-3 tracking-tight">
+                  Lace Wallet Sync
+                </h3>
+                <p className="text-xs text-[#F5F1E8]/60 leading-relaxed font-mono">
+                  Connect your pre-funded Midnight Lace wallet. Credentials, viewing keys, and unshielded balances remain isolated on your device.
+                </p>
               </div>
-              <h3 className="text-xl font-serif font-light text-[#F5F1E8] mb-3">
-                ZK Witness Check
-              </h3>
-              <p className="text-xs text-[#F5F1E8]/60 font-mono leading-relaxed">
-                Circuit checks whether your payment matches the private owed amount without writing numbers to storage.
-              </p>
-            </div>
-            <div className="mt-6 pt-4 border-t border-[#F5F1E8]/5 flex items-center justify-between text-[9px] text-[#F5F1E8]/30 font-mono">
-              <span>COMPACT CIRCUIT</span>
-              <span className="text-accent">ZERO DISCLOSURE</span>
-            </div>
-          </div>
-
-          {/* Card 3 */}
-          <div className="p-8 bg-[#0C0C0E] border border-[#F5F1E8]/15 relative overflow-hidden flex flex-col justify-between min-h-[260px]">
-            <div className="absolute top-0 left-0 w-2 h-2 border-b border-r border-[#F5F1E8]/30"></div>
-            <div className="absolute top-0 right-0 w-2 h-2 border-b border-l border-[#F5F1E8]/30"></div>
-            <div className="absolute bottom-0 left-0 w-2 h-2 border-t border-r border-[#F5F1E8]/30"></div>
-            <div className="absolute bottom-0 right-0 w-2 h-2 border-t border-l border-[#F5F1E8]/30"></div>
-
-            <div>
-              <div className="text-[10px] text-accent uppercase tracking-widest font-mono mb-4">
-                03 // SETTLE
+              <div className="mt-8 pt-4 border-t border-[#F5F1E8]/5 flex items-center justify-between">
+                <svg className="w-24 h-6 text-accent" viewBox="0 0 100 30" fill="none">
+                  <path d="M0,15 Q15,0 30,15 T60,15 T90,5 T100,15" stroke="currentColor" strokeWidth="1" fill="none"></path>
+                  <circle cx="60" cy="15" r="2" fill="#7DF9FF"></circle>
+                </svg>
+                <span className="text-[9px] text-[#F5F1E8]/30 font-mono">WALLET.SYNC.01</span>
               </div>
-              <h3 className="text-xl font-serif font-light text-[#F5F1E8] mb-3">
-                On-Chain Verification
-              </h3>
-              <p className="text-xs text-[#F5F1E8]/60 font-mono leading-relaxed">
-                The browser proof is validated on Midnight ledger. Only the boolean settled state flips to true.
-              </p>
             </div>
-            <div className="mt-6 pt-4 border-t border-[#F5F1E8]/5 flex items-center justify-between text-[9px] text-[#F5F1E8]/30 font-mono">
-              <span>LEDGER STATE</span>
-              <span className="text-[#7DF9FF]">SETTLED: TRUE</span>
+
+            {/* Column 02 */}
+            <div className="py-8 lg:py-0 lg:px-8 flex flex-col justify-between min-h-[260px]">
+              <div>
+                <div className="text-xs text-[#F5F1E8]/40 mb-6 font-mono">02 // WITNESS-EVAL</div>
+                <h3 className="text-xl font-light text-[#F5F1E8] font-serif mb-3 tracking-tight">
+                  ZK Witness Check
+                </h3>
+                <p className="text-xs text-[#F5F1E8]/60 leading-relaxed font-mono">
+                  The settleDebt Compact circuit evaluates payment against the private getOwedAmount witness. No numbers are stored publicly.
+                </p>
+              </div>
+              <div className="mt-8 pt-4 border-t border-[#F5F1E8]/5 flex items-center justify-between">
+                <svg className="w-24 h-6 text-[#7DF9FF]" viewBox="0 0 100 30" fill="none">
+                  <circle cx="50" cy="15" r="12" stroke="currentColor" strokeWidth="0.5" strokeDasharray="2 2"></circle>
+                  <circle cx="50" cy="15" r="4" fill="#2596be"></circle>
+                </svg>
+                <span className="text-[9px] text-[#F5F1E8]/30 font-mono">WITNESS.VERIFY.ZKP</span>
+              </div>
+            </div>
+
+            {/* Column 03 */}
+            <div className="py-8 lg:py-0 lg:px-8 flex flex-col justify-between min-h-[260px]">
+              <div>
+                <div className="text-xs text-[#F5F1E8]/40 mb-6 font-mono">03 // DISCLOSE-ASSERT</div>
+                <h3 className="text-xl font-light text-[#F5F1E8] font-serif mb-3 tracking-tight">
+                  State Settlement
+                </h3>
+                <p className="text-xs text-[#F5F1E8]/60 leading-relaxed font-mono">
+                  Only the boolean equality result is explicitly disclosed. Once verified by validators, on-chain settled status updates to true.
+                </p>
+              </div>
+              <div className="mt-8 pt-4 border-t border-[#F5F1E8]/5 flex items-center justify-between">
+                <svg className="w-24 h-6 text-[#F5F1E8]/40" viewBox="0 0 100 30" fill="none">
+                  <line x1="10" y1="5" x2="90" y2="25" stroke="currentColor" strokeWidth="0.75"></line>
+                  <line x1="10" y1="25" x2="90" y2="5" stroke="currentColor" strokeWidth="0.75" strokeDasharray="1 3"></line>
+                </svg>
+                <span className="text-[9px] text-[#F5F1E8]/30 font-mono">DISCLOSE.ASSERT.03</span>
+              </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* 3. PRIVACY COMPARISON */}
-      <section className="space-y-12">
-        <div className="border-b border-[#F5F1E8]/10 pb-4">
+      {/* 3. PRIVACY GUARANTEE */}
+      <section className="py-16 w-full">
+        <div className="border-b border-[#F5F1E8]/10 pb-4 mb-8">
           <span className="text-xs text-accent uppercase tracking-[0.2em] font-mono">
-            // 03 — PRIVACY GUARANTEE
+            // 03 — PRIVACY ALLOCATIONS
           </span>
-          <h2 className="text-3xl md:text-4xl font-serif text-[#F5F1E8] font-light mt-1">
-            Visible vs Shielded Data
+          <h2 className="text-3xl font-serif text-[#F5F1E8] font-light mt-1">
+            Data Ledger Disclosures
           </h2>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-[#F5F1E8]/15 border border-[#F5F1E8]/15 bg-[#0C0C0E]">
           {/* Public column */}
-          <div className="p-8 md:p-12 space-y-6">
-            <span className="text-xs text-[#FF4444] uppercase tracking-widest font-mono">
-              WHAT ON-CHAIN OBSERVERS SEE
+          <div className="p-8 md:p-10 space-y-4">
+            <span className="text-[10px] text-[#FF4444] uppercase tracking-widest font-mono">
+              PUBLIC LEDGER TRANSCRIPT (ON-CHAIN)
             </span>
-            <ul className="space-y-4 text-xs font-mono text-[#F5F1E8]/70">
+            <ul className="space-y-3 text-xs font-mono text-[#F5F1E8]/70">
               <li className="flex items-center justify-between border-b border-[#F5F1E8]/5 pb-2">
                 <span>Settled Status Flag</span>
                 <span className="text-[#F5F1E8]">Boolean (true/false)</span>
@@ -173,11 +234,11 @@ export const LandingPage: React.FC<LandingPageProps> = ({
           </div>
 
           {/* Private column */}
-          <div className="p-8 md:p-12 space-y-6">
-            <span className="text-xs text-[#7DF9FF] uppercase tracking-widest font-mono">
-              WHAT STAYS PRIVATE (ZERO-KNOWLEDGE)
+          <div className="p-8 md:p-10 space-y-4">
+            <span className="text-[10px] text-[#7DF9FF] uppercase tracking-widest font-mono">
+              ZERO-KNOWLEDGE WITNESS ENVIRONMENT
             </span>
-            <ul className="space-y-4 text-xs font-mono text-[#F5F1E8]/70">
+            <ul className="space-y-3 text-xs font-mono text-[#F5F1E8]/70">
               <li className="flex items-center justify-between border-b border-[#F5F1E8]/5 pb-2">
                 <span>Amount Owed</span>
                 <span className="text-[#7DF9FF]">SHIELDED BY WITNESS</span>

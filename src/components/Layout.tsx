@@ -1,5 +1,6 @@
 import React from 'react';
 import { WalletConnect } from './WalletConnect';
+import WebGLBackground from './WebGLBackground';
 
 type LayoutProps = {
   children: React.ReactNode;
@@ -24,7 +25,8 @@ export const Layout: React.FC<LayoutProps> = ({
 }) => {
   return (
     <div className="relative min-h-screen bg-[#0A0A0B] text-[#F5F1E8] font-mono selection:bg-[#2596be] selection:text-[#0A0A0B] overflow-x-hidden flex flex-col justify-between">
-      <div className="fixed inset-0 bg-[linear-gradient(to_right,#f5f1e802_1px,transparent_1px),linear-gradient(to_bottom,#f5f1e802_1px,transparent_1px)] bg-[size:4rem_4rem] pointer-events-none z-0"></div>
+      {/* WebGL Monochrome Ambient Aurora (Black/White, 0.2 opacity) */}
+      <WebGLBackground />
 
       <header className="relative z-20 border-b border-[#F5F1E8]/10 bg-[#0A0A0B]/90 backdrop-blur-md sticky top-0 px-6 py-4 flex items-center justify-between">
         <button

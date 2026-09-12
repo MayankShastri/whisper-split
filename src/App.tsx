@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Layout } from './components/Layout';
 import { LandingPage } from './pages/LandingPage';
 import { CircuitCall } from './components/CircuitCall';
@@ -29,6 +29,7 @@ export const App: React.FC = () => {
           settled={midnight.settled}
           settlementCount={midnight.settlementCount}
           onSettle={midnight.settle}
+          onReset={midnight.resetSettlementState}
           onBackToLanding={() => setView('landing')}
         />
       )}
@@ -36,4 +37,5 @@ export const App: React.FC = () => {
   );
 };
 
+import { useState } from 'react';
 export default App;

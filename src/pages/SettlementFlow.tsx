@@ -1,34 +1,45 @@
 import React, { useState, useEffect } from 'react';
 import { DeployPanel } from '../components/DeployPanel';
+import { useMidnight } from '../hooks/useMidnight';
+import { useContractState } from '../hooks/useContractState';
+import { callSettleDebtCircuit } from '../midnightProviders';
 
 type SettlementFlowProps = {
-  settled: boolean;
-  settlementCount: bigint;
-  onSettle: (amount: bigint) => Promise<boolean>;
-  onReset: () => void;
   onBackToLanding: () => void;
 };
 
 export const SettlementFlow: React.FC<SettlementFlowProps> = ({
-  settled,
-  settlementCount,
-  onSettle,
-  onReset,
   onBackToLanding,
 }) => {
+  const { walletAddress, getConnectedApi } = useMidnight();
+  const [contractAddress, setContractAddress] = useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('whisper_split_deployed_info');
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          if (parsed?.address) return parsed.address;
+        } catch {}
+      }
+    }
+    return '2e5b7029de6660d78610ba39b67dc0e467c811dc6bf84acf996679b491a85def';
+  });
+  
+  const { settled, settlementCount, lastTxHash, loading: stateLoading, refetch, markSettled } = useContractState(contractAddress);
+
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
   const [paidAmount, setPaidAmount] = useState<string>('100');
   const [provingStatusIndex, setProvingStatusIndex] = useState<number>(0);
   const [isSuccess, setIsSuccess] = useState<boolean>(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [contractAddress, setContractAddress] = useState<string>('02008f31b6e22c92131920807c42733d7b8895015e1cbff534ad17698246377317');
-  const [txHash, setTxHash] = useState<string>('0x4e8a1f893d9b027ca8e50b7194f28dcba495810237ca58ef1284729104bcefa3');
+  const [settleTxHash, setSettleTxHash] = useState<string | null>(null);
 
   const provingMessages = [
-    'Initialising Compact circuit...',
-    'Invoking getOwedAmount() private witness...',
-    'Generating zero-knowledge proof locally in browser...',
-    'Signing & Submitting transaction to Midnight Preprod...',
+    '1. Initialising Compact circuit & loading verifier key...',
+    '2. Invoking getOwedAmount() private witness from local state...',
+    '3. Generating zero-knowledge proof in browser...',
+    '4. Prompting wallet extension to approve & broadcast...',
+    '5. Transaction submitted! Awaiting ledger finalization...',
   ];
 
   useEffect(() => {
@@ -36,7 +47,7 @@ export const SettlementFlow: React.FC<SettlementFlowProps> = ({
     if (step === 3) {
       interval = setInterval(() => {
         setProvingStatusIndex((prev) => (prev < provingMessages.length - 1 ? prev + 1 : prev));
-      }, 1200);
+      }, 1400);
 
       const runSettlement = async () => {
         try {
@@ -44,19 +55,46 @@ export const SettlementFlow: React.FC<SettlementFlowProps> = ({
           if (numericAmount <= 0n) {
             throw new Error('Payment amount must be greater than zero.');
           }
-          await onSettle(numericAmount);
-          const randomHash = '0x' + Array.from(crypto.getRandomValues(new Uint8Array(32)))
-            .map(b => b.toString(16).padStart(2, '0'))
-            .join('');
-          setTxHash(randomHash);
+
+          const connectedApi = getConnectedApi();
+          if (!connectedApi) {
+            throw new Error('Wallet not connected. Please connect your wallet first.');
+          }
+
+          console.log(`Executing real Compact circuit call 'settleDebt(${numericAmount})' on contract ${contractAddress}...`);
+          
+          const result = await callSettleDebtCircuit(
+            connectedApi,
+            contractAddress,
+            numericAmount,
+            100n // Expected debt owed amount
+          );
+
+          const finalTxHash = result.txHash;
+          console.log('settleDebt circuit invocation completed. Tx Hash:', finalTxHash);
+          
+          setSettleTxHash(finalTxHash);
+          markSettled(finalTxHash);
+
+          await new Promise(resolve => setTimeout(resolve, 2000));
+          await refetch();
           setIsSuccess(true);
         } catch (err: any) {
+          console.error('Circuit execution error:', err);
           setIsSuccess(false);
-          setErrorMessage(err?.message || 'Verification failed: paidAmount != owedAmount');
+          
+          let errorMsg = err?.message || 'Settlement circuit execution failed';
+          if (errorMsg.includes('User rejected') || errorMsg.includes('declined')) {
+            errorMsg = 'Transaction was declined in wallet. Please try again and approve the transaction.';
+          } else if (errorMsg.includes('Paid amount does not match')) {
+            errorMsg = 'Verification failed: The paid amount does not match the private owed amount witness.';
+          } else if (errorMsg.includes('already settled')) {
+            errorMsg = 'Contract state error: This debt has already been settled on-chain.';
+          }
+          
+          setErrorMessage(errorMsg);
         } finally {
-          setTimeout(() => {
-            setStep(4);
-          }, 4500);
+          setStep(4);
         }
       };
 
@@ -71,8 +109,8 @@ export const SettlementFlow: React.FC<SettlementFlowProps> = ({
       {step === 1 && (
         <DeployPanel
           onDeploySuccess={(addr, hash) => {
+            console.log('Contract confirmed on chain:', addr, hash);
             setContractAddress(addr);
-            setTxHash(hash);
           }}
         />
       )}
@@ -107,16 +145,34 @@ export const SettlementFlow: React.FC<SettlementFlowProps> = ({
             </div>
 
             <div className="flex items-center justify-between py-2 border-b border-[#F5F1E8]/5">
-              <span className="text-[#F5F1E8]/50 uppercase">Ledger State</span>
-              <span className={settled ? 'text-[#7DF9FF]' : 'text-[#FF4444]'}>
-                {settled ? '● SETTLED' : '○ UNSETTLED'}
-              </span>
+              <span className="text-[#F5F1E8]/50 uppercase">Ledger State (On-Chain)</span>
+              {stateLoading ? (
+                <span className="text-[#F5F1E8]/40 animate-pulse">QUERYING INDEXER...</span>
+              ) : (
+                <span className={settled ? 'text-[#7DF9FF]' : 'text-[#FF4444]'}>
+                  {settled ? '● SETTLED' : '○ UNSETTLED'}
+                </span>
+              )}
             </div>
 
             <div className="flex items-center justify-between py-2 border-b border-[#F5F1E8]/5">
               <span className="text-[#F5F1E8]/50 uppercase">Settlement Counter</span>
               <span className="text-[#F5F1E8]">{settlementCount.toString()}</span>
             </div>
+
+            {lastTxHash && (
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-[#F5F1E8]/5 gap-1">
+                <span className="text-[#F5F1E8]/50 uppercase">Latest Confirmed Tx</span>
+                <a
+                  href={`https://preprod.midnightexplorer.com/transaction/${lastTxHash}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[#7DF9FF] text-[10px] font-mono tracking-wider break-all hover:underline"
+                >
+                  {lastTxHash}
+                </a>
+              </div>
+            )}
 
             <div className="flex items-center justify-between py-2 border-b border-[#F5F1E8]/5">
               <span className="text-[#F5F1E8]/50 uppercase">Owed Balance</span>
@@ -141,17 +197,17 @@ export const SettlementFlow: React.FC<SettlementFlowProps> = ({
 
             {settled && (
               <button
-                onClick={onReset}
-                className="border border-[#7DF9FF]/40 text-[#7DF9FF] hover:bg-[#7DF9FF]/10 px-4 py-4 text-xs font-mono tracking-widest uppercase transition-colors"
-                title="Reset local state to test settling again"
+                onClick={() => refetch()}
+                className="border border-[#7DF9FF]/40 text-[#7DF9FF] hover:bg-[#7DF9FF]/10 px-4 py-4 text-xs font-mono tracking-widest uppercase transition-colors cursor-pointer"
+                title="Re-query live state from Midnight indexer"
               >
-                Reset State
+                [Dev/Demo: Sync Indexer]
               </button>
             )}
 
             <button
               onClick={onBackToLanding}
-              className="border border-[#F5F1E8]/20 px-6 py-4 text-xs font-mono tracking-widest uppercase hover:border-accent hover:text-accent transition-colors"
+              className="border border-[#F5F1E8]/20 px-6 py-4 text-xs font-mono tracking-widest uppercase hover:border-accent hover:text-accent transition-colors cursor-pointer"
             >
               Back
             </button>
@@ -185,6 +241,8 @@ export const SettlementFlow: React.FC<SettlementFlowProps> = ({
                 Amount to settle (tNIGHT tokens equivalent)
               </label>
               <input
+                id="paidAmount"
+                name="paidAmount"
                 type="number"
                 value={paidAmount}
                 onChange={(e) => setPaidAmount(e.target.value)}
@@ -211,13 +269,13 @@ export const SettlementFlow: React.FC<SettlementFlowProps> = ({
                 setStep(3);
               }}
               disabled={!paidAmount || Number(paidAmount) <= 0}
-              className="flex-1 inline-flex items-center justify-center bg-accent text-[#0A0A0B] font-semibold text-xs tracking-widest uppercase px-8 py-4 transition-all duration-300 hover:bg-accent/90 disabled:opacity-40 disabled:cursor-not-allowed shadow-[inset_0_1px_0_rgba(255,255,255,0.3)]"
+              className="flex-1 inline-flex items-center justify-center bg-accent text-[#0A0A0B] font-semibold text-xs tracking-widest uppercase px-8 py-4 transition-all duration-300 hover:bg-accent/90 disabled:opacity-40 disabled:cursor-not-allowed shadow-[inset_0_1px_0_rgba(255,255,255,0.3)] cursor-pointer"
             >
               Generate ZK Proof →
             </button>
             <button
               onClick={() => setStep(1)}
-              className="border border-[#F5F1E8]/20 px-6 py-4 text-xs font-mono tracking-widest uppercase hover:border-accent hover:text-accent transition-colors"
+              className="border border-[#F5F1E8]/20 px-6 py-4 text-xs font-mono tracking-widest uppercase hover:border-accent hover:text-accent transition-colors cursor-pointer"
             >
               Cancel
             </button>
@@ -270,32 +328,40 @@ export const SettlementFlow: React.FC<SettlementFlowProps> = ({
               </div>
 
               <div className="text-xs text-[#7DF9FF] uppercase tracking-[0.2em] mb-2 font-mono">
-                // SETTLEMENT ON-CHAIN VERIFIED
+                // SETTLEMENT ON-CHAIN SUBMITTED
               </div>
 
               <h2 className="text-3xl md:text-4xl font-light font-serif text-[#F5F1E8] mb-4">
-                Debt Marked Settled
+                Debt Transaction Sent
               </h2>
 
               <p className="text-xs text-[#F5F1E8]/60 mb-6 max-w-md mx-auto leading-relaxed font-mono">
-                The zero-knowledge proof verified that your payment matched the confidential debt amount.
-                Public ledger updated: <span className="text-[#7DF9FF]">settled: true</span>.
+                The transaction was signed and submitted to the Midnight network.
               </p>
 
-              <div className="mb-8 p-4 bg-[#0A0A0B] border border-[#F5F1E8]/10 text-left text-[11px] font-mono space-y-2 max-w-lg mx-auto">
-                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center">
-                  <span className="text-[#F5F1E8]/40 uppercase">Contract:</span>
-                  <span className="text-accent break-all">{contractAddress}</span>
+              {settleTxHash && (
+                <div className="mb-8 p-4 bg-[#0A0A0B] border border-[#F5F1E8]/10 text-left text-[11px] font-mono space-y-2 max-w-lg mx-auto">
+                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center">
+                    <span className="text-[#F5F1E8]/40 uppercase">Contract:</span>
+                    <span className="text-accent break-all">{contractAddress}</span>
+                  </div>
+                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center">
+                    <span className="text-[#F5F1E8]/40 uppercase">Tx Hash:</span>
+                    <a
+                      href={`https://preprod.midnightexplorer.com/transaction/${settleTxHash}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-[#7DF9FF] break-all hover:underline"
+                    >
+                      {settleTxHash}
+                    </a>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-[#F5F1E8]/40 uppercase">Network Status:</span>
+                    <span className="text-[#7DF9FF]">SUBMITTED TO PREPROD</span>
+                  </div>
                 </div>
-                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center">
-                  <span className="text-[#F5F1E8]/40 uppercase">Tx Hash:</span>
-                  <span className="text-[#7DF9FF] break-all">{txHash}</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-[#F5F1E8]/40 uppercase">Network:</span>
-                  <span className="text-[#F5F1E8]/80">Midnight Preprod</span>
-                </div>
-              </div>
+              )}
 
               <button
                 onClick={() => setStep(1)}
@@ -314,15 +380,15 @@ export const SettlementFlow: React.FC<SettlementFlowProps> = ({
               </div>
 
               <div className="text-xs text-[#FF4444] uppercase tracking-[0.2em] mb-2 font-mono">
-                // ASSERTION FAILED
+                // TRANSACTION REJECTED
               </div>
 
               <h2 className="text-3xl md:text-4xl font-light font-serif text-[#F5F1E8] mb-4">
-                Settlement Rejected
+                Settlement Failed
               </h2>
 
               <p className="text-xs text-[#FF4444]/80 mb-8 max-w-md mx-auto leading-relaxed font-mono">
-                {errorMessage || 'Circuit assertion failed: paidAmount does not match owedAmount.'}
+                {errorMessage || 'Transaction was declined or rejected.'}
               </p>
 
               <div className="flex justify-center gap-4">
@@ -330,11 +396,11 @@ export const SettlementFlow: React.FC<SettlementFlowProps> = ({
                   onClick={() => setStep(2)}
                   className="inline-flex items-center justify-center bg-accent text-[#0A0A0B] font-semibold text-xs tracking-widest uppercase px-8 py-4 transition-all duration-300 hover:bg-accent/90 cursor-pointer"
                 >
-                  Adjust Amount
+                  Try Again
                 </button>
                 <button
                   onClick={() => setStep(1)}
-                  className="border border-[#F5F1E8]/20 px-6 py-4 text-xs font-mono tracking-widest uppercase hover:border-accent hover:text-accent transition-colors"
+                  className="border border-[#F5F1E8]/20 px-6 py-4 text-xs font-mono tracking-widest uppercase hover:border-accent hover:text-accent transition-colors cursor-pointer"
                 >
                   Dashboard
                 </button>
@@ -346,3 +412,4 @@ export const SettlementFlow: React.FC<SettlementFlowProps> = ({
     </div>
   );
 };
+

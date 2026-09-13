@@ -5,10 +5,11 @@ import WebGLBackground from './WebGLBackground';
 type LayoutProps = {
   children: React.ReactNode;
   walletAddress: string | null;
+  walletName?: string | null;
   isConnecting: boolean;
   isConnected: boolean;
   error: string | null;
-  onConnect: () => void;
+  onConnectWallet: (walletKey: '1am' | 'mnLace') => void;
   onDisconnect: () => void;
   onLogoClick?: () => void;
 };
@@ -16,16 +17,16 @@ type LayoutProps = {
 export const Layout: React.FC<LayoutProps> = ({
   children,
   walletAddress,
+  walletName,
   isConnecting,
   isConnected,
   error,
-  onConnect,
+  onConnectWallet,
   onDisconnect,
   onLogoClick,
 }) => {
   return (
     <div className="relative min-h-screen bg-[#0A0A0B] text-[#F5F1E8] font-mono selection:bg-[#2596be] selection:text-[#0A0A0B] overflow-x-hidden flex flex-col justify-between">
-      {/* WebGL Monochrome Ambient Aurora (Black/White, 0.2 opacity) */}
       <WebGLBackground />
 
       <header className="relative z-20 border-b border-[#F5F1E8]/10 bg-[#0A0A0B]/90 backdrop-blur-md sticky top-0 px-6 py-4 flex items-center justify-between">
@@ -42,10 +43,11 @@ export const Layout: React.FC<LayoutProps> = ({
         <div className="flex items-center gap-6">
           <WalletConnect
             address={walletAddress}
+            walletName={walletName}
             isConnecting={isConnecting}
             isConnected={isConnected}
             error={error}
-            onConnect={onConnect}
+            onConnectWallet={onConnectWallet}
             onDisconnect={onDisconnect}
           />
         </div>
@@ -60,7 +62,7 @@ export const Layout: React.FC<LayoutProps> = ({
           <span>© 2026 Whisper Split. Zero-Knowledge Debt Settlement.</span>
         </div>
         <div className="flex items-center gap-6 text-[10px] tracking-widest uppercase">
-          <span className="text-accent">// BUILT ON MIDNIGHT</span>
+          <span className="text-accent">// 1AM & LACE COMPATIBLE</span>
           <span className="text-[#7DF9FF]">ZK-SNARK PRIVACY SHIELD</span>
         </div>
       </footer>

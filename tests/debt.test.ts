@@ -14,23 +14,22 @@ const setup = async (owedAmount = 100n) => {
   const privateState = { owedAmount };
   const initialZswapLocalState = RT.emptyZswapLocalState(COIN);
 
-  const ctor = await contract.initialState({
+  const ctor = contract.initialState({
     initialPrivateState: privateState,
     initialZswapLocalState,
   });
 
   const ctx = RT.createCircuitContext(
-    'settleDebt',
     ADDR,
     initialZswapLocalState,
-    ctor.currentContractState,
+    ctor.currentContractState.data,
     ctor.currentPrivateState
   );
 
   return { contract, ctx, ctor };
 };
 
-const getState = (ctx) => ledger(ctx.callContext.currentQueryContext.state);
+const getState = (ctx) => ledger(ctx.currentQueryContext.state);
 
 describe('Whisper Split - Debt Contract', () => {
   it('1. Initializes contract with settled=false and settlementCount=0', async () => {
@@ -43,7 +42,7 @@ describe('Whisper Split - Debt Contract', () => {
   it('2. Successfully settles debt when paidAmount equals owedAmount', async () => {
     const { contract, ctx } = await setup(100n);
 
-    const result = await contract.impureCircuits.settleDebt(ctx, 100n);
+    const result = contract.impureCircuits.settleDebt(ctx, 100n);
 
     const state = getState(result.context);
     expect(state.settled).toBe(true);
@@ -53,7 +52,7 @@ describe('Whisper Split - Debt Contract', () => {
   it('3. Fails to settle debt when paidAmount does NOT match owedAmount', async () => {
     const { contract, ctx } = await setup(100n);
 
-    await expect(contract.impureCircuits.settleDebt(ctx, 50n)).rejects.toThrow(
+    expect(() => contract.impureCircuits.settleDebt(ctx, 50n)).toThrow(
       'Paid amount does not match owed amount'
     );
   });
@@ -61,17 +60,17 @@ describe('Whisper Split - Debt Contract', () => {
   it('4. Double-settle is rejected — debt can only be settled once', async () => {
     const { contract, ctx } = await setup(100n);
 
-    const result = await contract.impureCircuits.settleDebt(ctx, 100n);
+    const result = contract.impureCircuits.settleDebt(ctx, 100n);
 
-    await expect(
+    expect(() =>
       contract.impureCircuits.settleDebt(result.context, 100n)
-    ).rejects.toThrow('Debt is already settled');
+    ).toThrow('Debt is already settled');
   });
 
   it('5. Disclose check: ledger state never contains owedAmount or paidAmount', async () => {
     const { contract, ctx } = await setup(100n);
 
-    const result = await contract.impureCircuits.settleDebt(ctx, 100n);
+    const result = contract.impureCircuits.settleDebt(ctx, 100n);
     const state = getState(result.context);
 
     expect(Object.keys(state)).toEqual(['settled', 'settlementCount']);

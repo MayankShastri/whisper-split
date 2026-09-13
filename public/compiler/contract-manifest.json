@@ -1,0 +1,58 @@
+{
+  "manifest-version": "1",
+  "compiler-version": "0.34.0",
+  "language-version": "0.26.0",
+  "runtime-version": "0.19.0",
+  "compiler": {
+    "type": "directory",
+    "contract-info.json": {
+      "type": "file",
+      "size": 990,
+      "hash": "cf73a5eb6c8d2519da1bfffd8cdfb472525c2a45092e1a1749e12df1ecc07860"
+    }
+  },
+  "contract": {
+    "type": "directory",
+    "index.d.ts": {
+      "type": "file",
+      "size": 1514,
+      "hash": "7be36cd339a49f957508dce8c8c02e9ebc4e7799e23ac91ff5edb4fb3a62b5a2"
+    },
+    "index.js": {
+      "type": "file",
+      "size": 17243,
+      "hash": "31e3dd58b5948d892d702157f26e2d8ecb29413f751aced508c1343afefed14a"
+    },
+    "index.js.map": {
+      "type": "file",
+      "size": 730,
+      "hash": "381e1c1e1b99f546c8fa3814a51bd560d8e5698391a0dcb01ba41dfa650328b1"
+    }
+  },
+  "zkir": {
+    "type": "directory",
+    "settleDebt.bzkir": {
+      "type": "file",
+      "size": 193,
+      "hash": "6f2c4fa96b6a48a4b0aba0aa521cbdbfaf98ecfd5e016a2d4c2f9ad25a5a75d4"
+    },
+    "settleDebt.zkir": {
+      "type": "file",
+      "size": 2975,
+      "hash": "a5dd88ba44c57e3cfffea20970c902d526ec820f10dac32853283d5b904c24f1"
+    }
+  },
+  "keys": {
+    "type": "directory",
+    "settleDebt.prover": {
+      "type": "file",
+      "size": 74952,
+      "hash": "58f62280d2d74fad43c8815fdcdc6b2bf982427141ca19b85e6bbece3ffc30cb"
+    },
+    "settleDebt.verifier": {
+      "type": "file",
+      "size": 1351,
+      "hash": "53c0addcf98f0e15739b99fdbe98d4d80a9791b6aa82672e861914113a14e22c"
+    }
+  }
+}

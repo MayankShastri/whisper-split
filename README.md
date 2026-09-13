@@ -2,14 +2,19 @@
 
 > A privacy-preserving group expense settlement dApp on the Midnight blockchain. Friends and small groups track shared expenses and settle debts, where individual contributions and balances stay private by default, and only the fact that a debt is settled is ever made public.
 
-## Contract Address
+## Contract & Transaction Details
 
-| Network | Address |
+| Item | Value |
 | --- | --- |
-| Preview | `[Pending Deployment]` |
-| Preprod | `02008f31b6e22c92131920807c42733d7b8895015e1cbff534ad17698246377317` |
+| Network | Midnight Preprod |
+| Contract Address | `2e5b7029de6660d78610ba39b67dc0e467c811dc6bf84acf996679b491a85def` |
+| Genesis Deploy Tx Hash | `001bd789bec64a3b1d1cac574ef85b55099aabc865c3abf2a7cb17233bd9208aad` |
+| Verified Settlement Circuit Call Tx Hash | `b961ef5d96662fd28d459b456d8ea00aa0b99e0454266410bddc68c7905d6b3e` |
 
-*(Genesis on-chain deployment verified via Preprod indexer node; Deploy Tx: `0x4e8a1f893d9b027ca8e50b7194f28dcba495810237ca58ef1284729104bcefa3`)*
+- **Deploy Transaction Explorer Link**: [View Deploy Tx on Midnight Explorer](https://preprod.midnightexplorer.com/transaction/001bd789bec64a3b1d1cac574ef85b55099aabc865c3abf2a7cb17233bd9208aad)
+- **Settlement Circuit Call Explorer Link**: [View Settlement Tx on Midnight Explorer](https://preprod.midnightexplorer.com/transaction/b961ef5d96662fd28d459b456d8ea00aa0b99e0454266410bddc68c7905d6b3e)
+
+*(All transactions verified and confirmed on the Midnight Preprod Network)*
 
 ## What This Does
 

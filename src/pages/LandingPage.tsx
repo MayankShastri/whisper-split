@@ -100,7 +100,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               onClick={isConnected ? onStartSettlement : onConnect}
               className="group relative inline-flex items-center justify-center bg-accent text-[#0A0A0B] font-semibold text-xs tracking-widest uppercase px-8 py-4 overflow-hidden transition-all duration-300 hover:bg-accent/90 shadow-[inset_0_1px_0_rgba(255,255,255,0.3)] cursor-pointer"
             >
-              {isConnected ? 'Open Settlement Console →' : 'Connect Lace & Settle →'}
+              {isConnected ? 'Open Settlement Console →' : 'Connect Wallet & Settle →'}
             </button>
           </div>
 
@@ -142,10 +142,10 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               <div>
                 <div className="text-xs text-[#F5F1E8]/40 mb-6 font-mono">01 // LOCAL-SYNC</div>
                 <h3 className="text-xl font-light text-[#F5F1E8] font-serif mb-3 tracking-tight">
-                  Lace Wallet Sync
+                  Wallet Connection
                 </h3>
                 <p className="text-xs text-[#F5F1E8]/60 leading-relaxed font-mono">
-                  Connect your pre-funded Midnight Lace wallet. Credentials, viewing keys, and unshielded balances remain isolated on your device.
+                  Connect your pre-funded Midnight wallet (1AM / Lace). Credentials, viewing keys, and unshielded balances remain isolated on your device.
                 </p>
               </div>
               <div className="mt-8 pt-4 border-t border-[#F5F1E8]/5 flex items-center justify-between">

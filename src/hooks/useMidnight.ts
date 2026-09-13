@@ -1,67 +1,64 @@
+import { useState, useCallback } from 'react';
+import type { ConnectedAPI } from '@midnight-ntwrk/dapp-connector-api';
+
 export type MidnightState = {
   walletAddress: string | null;
+  walletName: string | null;
   isConnecting: boolean;
   isConnected: boolean;
   error: string | null;
-  settled: boolean;
-  settlementCount: bigint;
-  connect: () => Promise<void>;
+  connect: (preferredWallet: '1am' | 'mnLace') => Promise<void>;
   disconnect: () => void;
-  settle: (amount: bigint) => Promise<boolean>;
-  resetSettlementState: () => void;
+  getConnectedApi: () => ConnectedAPI | null;
 };
 
-import { useState, useCallback } from 'react';
+let cachedConnectedApi: ConnectedAPI | null = null;
 
-const getLaceWallet = () => {
+const getSpecificWallet = (key: '1am' | 'mnLace') => {
   if (typeof window === 'undefined') return undefined;
   const midnight = (window as any).midnight;
   if (!midnight) return undefined;
-  if (midnight.mnLace) return midnight.mnLace;
-  return Object.values(midnight).find(
-    (w: any) => !!w && typeof w === 'object' && typeof w.connect === 'function'
-  );
+
+  if (key === '1am') {
+    if (midnight['1am']) return midnight['1am'];
+    return Object.values(midnight).find(
+      (w: any) => !!w && typeof w === 'object' && ((w.name && w.name.toLowerCase().includes('1am')) || (w.rdns && w.rdns.includes('1am')))
+    );
+  }
+
+  if (key === 'mnLace') {
+    if (midnight.mnLace) return midnight.mnLace;
+    return Object.values(midnight).find(
+      (w: any) => !!w && typeof w === 'object' && ((w.name && w.name.toLowerCase().includes('lace')) || (w.rdns && w.rdns.includes('lace')))
+    );
+  }
+
+  return undefined;
 };
 
 export const useMidnight = (): MidnightState => {
-  const [walletAddress, setWalletAddress] = useState<string | null>(() => {
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem('whisper_split_wallet') || null;
-    }
-    return null;
-  });
+  const [walletAddress, setWalletAddress] = useState<string | null>(null);
+  const [walletName, setWalletName] = useState<string | null>(null);
   const [isConnecting, setIsConnecting] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Persistent settlement state across refreshes
-  const [settled, setSettled] = useState<boolean>(() => {
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem('whisper_split_settled') === 'true';
-    }
-    return false;
-  });
-
-  const [settlementCount, setSettlementCount] = useState<bigint>(() => {
-    if (typeof window !== 'undefined') {
-      const savedCount = localStorage.getItem('whisper_split_count');
-      return savedCount ? BigInt(savedCount) : 0n;
-    }
-    return 0n;
-  });
-
-  const connect = useCallback(async () => {
+  const connect = useCallback(async (selectedKey: '1am' | 'mnLace') => {
     setIsConnecting(true);
     setError(null);
 
-    const wallet = getLaceWallet();
+    const wallet = getSpecificWallet(selectedKey);
+    const expectedName = selectedKey === '1am' ? '1AM Wallet' : 'Midnight Lace';
+
     if (!wallet) {
       setIsConnecting(false);
-      setError('Lace wallet extension not found. Please ensure Lace is installed, unlocked, and enabled.');
+      setError(`${expectedName} extension not found in browser. Please install or enable it.`);
       return;
     }
 
     try {
+      const displayName = wallet.name || expectedName;
       const connectedApi = await wallet.connect('preprod');
+      cachedConnectedApi = connectedApi;
 
       let address: string | null = null;
       try {
@@ -77,21 +74,20 @@ export const useMidnight = (): MidnightState => {
       }
 
       if (!address || typeof address !== 'string') {
-        address = 'mn_addr_preprod_connected';
+        throw new Error('Could not retrieve wallet address');
       }
 
       setWalletAddress(address);
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('whisper_split_wallet', address);
-      }
+      setWalletName(displayName);
     } catch (err: any) {
+      cachedConnectedApi = null;
       const msg = err?.message || String(err);
       if (msg.includes('Network ID mismatch')) {
-        setError('Network mismatch: Please set your Lace wallet network to "Preprod" in Lace Settings.');
+        setError(`Network mismatch: Please set ${expectedName} to "Preprod" in settings.`);
       } else if (msg.includes('User rejected') || msg.includes('Rejected')) {
-        setError('Connection request was declined in Lace.');
+        setError(`Connection request declined in ${expectedName}.`);
       } else {
-        setError(msg || 'Failed to connect to Lace wallet');
+        setError(msg || `Failed to connect to ${expectedName}`);
       }
     } finally {
       setIsConnecting(false);
@@ -99,46 +95,24 @@ export const useMidnight = (): MidnightState => {
   }, []);
 
   const disconnect = useCallback(() => {
+    cachedConnectedApi = null;
     setWalletAddress(null);
+    setWalletName(null);
     setError(null);
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('whisper_split_wallet');
-    }
   }, []);
 
-  const settle = useCallback(async (_amount: bigint): Promise<boolean> => {
-    await new Promise((resolve) => setTimeout(resolve, 3500));
-    setSettled(true);
-    setSettlementCount((prev) => {
-      const newCount = prev + 1n;
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('whisper_split_settled', 'true');
-        localStorage.setItem('whisper_split_count', newCount.toString());
-      }
-      return newCount;
-    });
-    return true;
-  }, []);
-
-  const resetSettlementState = useCallback(() => {
-    setSettled(false);
-    setSettlementCount(0n);
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('whisper_split_settled');
-      localStorage.removeItem('whisper_split_count');
-    }
+  const getConnectedApi = useCallback(() => {
+    return cachedConnectedApi;
   }, []);
 
   return {
     walletAddress,
+    walletName,
     isConnecting,
-    isConnected: !!walletAddress,
+    isConnected: !!walletAddress && !!cachedConnectedApi,
     error,
-    settled,
-    settlementCount,
     connect,
     disconnect,
-    settle,
-    resetSettlementState,
+    getConnectedApi,
   };
 };

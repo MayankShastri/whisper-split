@@ -121,7 +121,7 @@ export const DeployPanel: React.FC<{
           <div className="flex flex-col sm:flex-row sm:justify-between gap-1">
             <span className="text-[#F5F1E8]/50">Deployment Tx Hash:</span>
             <a
-              href={`https://preprod.midnightexplorer.com/transaction/${deployedInfo.txHash}`}
+              href={`https://preprod.midnightexplorer.com/transactions/${deployedInfo.txHash.startsWith('0x') ? deployedInfo.txHash : `0x${deployedInfo.txHash}`}`}
               target="_blank"
               rel="noopener noreferrer"
               className="text-[#7DF9FF] break-all hover:underline"

@@ -164,7 +164,7 @@ export const SettlementFlow: React.FC<SettlementFlowProps> = ({
               <div className="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-[#F5F1E8]/5 gap-1">
                 <span className="text-[#F5F1E8]/50 uppercase">Latest Confirmed Tx</span>
                 <a
-                  href={`https://preprod.midnightexplorer.com/transaction/${lastTxHash}`}
+                  href={`https://preprod.midnightexplorer.com/transactions/${lastTxHash.startsWith('0x') ? lastTxHash : `0x${lastTxHash}`}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-[#7DF9FF] text-[10px] font-mono tracking-wider break-all hover:underline"
@@ -348,7 +348,7 @@ export const SettlementFlow: React.FC<SettlementFlowProps> = ({
                   <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center">
                     <span className="text-[#F5F1E8]/40 uppercase">Tx Hash:</span>
                     <a
-                      href={`https://preprod.midnightexplorer.com/transaction/${settleTxHash}`}
+                      href={`https://preprod.midnightexplorer.com/transactions/${settleTxHash.startsWith('0x') ? settleTxHash : `0x${settleTxHash}`}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-[#7DF9FF] break-all hover:underline"

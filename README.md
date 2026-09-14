@@ -8,11 +8,11 @@
 | --- | --- |
 | Network | Midnight Preprod |
 | Contract Address | `2e5b7029de6660d78610ba39b67dc0e467c811dc6bf84acf996679b491a85def` |
-| Genesis Deploy Tx Hash | `001bd789bec64a3b1d1cac574ef85b55099aabc865c3abf2a7cb17233bd9208aad` |
-| Verified Settlement Circuit Call Tx Hash | `b961ef5d96662fd28d459b456d8ea00aa0b99e0454266410bddc68c7905d6b3e` |
+| Genesis Deploy Tx Hash | `0x4cf8dadd8f1f6b086a0992cabc675a0208a226abc357368b7bcaa2172f90b9c5` |
+| Verified Settlement Circuit Call Tx Hash | `0xb961ef5d96662fd28d459b456d8ea00aa0b99e0454266410bddc68c7905d6b3e` |
 
-- **Deploy Transaction Explorer Link**: [View Deploy Tx on Midnight Explorer](https://preprod.midnightexplorer.com/transaction/001bd789bec64a3b1d1cac574ef85b55099aabc865c3abf2a7cb17233bd9208aad)
-- **Settlement Circuit Call Explorer Link**: [View Settlement Tx on Midnight Explorer](https://preprod.midnightexplorer.com/transaction/b961ef5d96662fd28d459b456d8ea00aa0b99e0454266410bddc68c7905d6b3e)
+- **Deploy Transaction Explorer Link**: [View Deploy Tx on Midnight Explorer](https://preprod.midnightexplorer.com/transactions/0x4cf8dadd8f1f6b086a0992cabc675a0208a226abc357368b7bcaa2172f90b9c5)
+- **Settlement Circuit Call Explorer Link**: [View Settlement Tx on Midnight Explorer](https://preprod.midnightexplorer.com/transactions/0xb961ef5d96662fd28d459b456d8ea00aa0b99e0454266410bddc68c7905d6b3e)
 
 *(All transactions verified and confirmed on the Midnight Preprod Network)*
 

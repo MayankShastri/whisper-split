@@ -12,5 +12,13 @@ opencode.json
 project context.md
 plans_and_prds/
 
+# Developer guides & notes
+SETTLEMENT_FIX_SUMMARY.md
+SETTLEMENT_VERIFICATION_GUIDE.md
+TROUBLESHOOTING_1AM_WALLET.md
+AGENTS.md
+.ignore
+
 # graft's local graph cache — regenerable, not committed (run `graft build`).
 graft/
+

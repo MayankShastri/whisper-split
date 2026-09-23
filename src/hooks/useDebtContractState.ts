@@ -23,7 +23,8 @@ export function useDebtContractState(contractAddress: string) {
       if (!raw) throw new Error('Not indexed');
       const parsed = debtLedger(raw.data);
       if (version.current === request) setState({ settled: parsed.settled, settlementCount: parsed.settlementCount });
-    } catch {
+    } catch (e) {
+      console.error('useDebtContractState refetch failed:', e);
       if (version.current === request) setError('Debt state unavailable. Check the contract address, wallet network and indexer, then refresh.');
     } finally {
       if (version.current === request) setLoading(false);

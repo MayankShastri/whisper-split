@@ -26,7 +26,8 @@ export const CircuitCall: React.FC<{ onBackToLanding: () => void }> = ({ onBackT
       setTxHash(result.txHash);
       setMessage('Settlement call returned. Refresh the indexer to inspect public settlement state.');
       await refetch();
-    } catch {
+    } catch (e) {
+      console.error('settle failed:', e);
       setMessage('Settlement did not complete. Check wallet activity and refresh the indexer before retrying.');
     } finally {
       busy.current = false;

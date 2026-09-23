@@ -1,7 +1,7 @@
 import { CompiledContract } from '@midnight-ntwrk/compact-js';
 import { sampleSigningKey } from '@midnight-ntwrk/compact-runtime';
 import type { ConnectedAPI } from '@midnight-ntwrk/dapp-connector-api';
-import { createUnprovenDeployTx, submitTxAsync, findDeployedContract } from '@midnight-ntwrk/midnight-js-contracts';
+import { createUnprovenDeployTx, submitTxAsync, submitCallTxAsync } from '@midnight-ntwrk/midnight-js-contracts';
 import { Contract, ledger, type Witnesses } from '../managed/debt/contract/index.js';
 import { createMidnightProviders } from './midnightProviders';
 
@@ -35,14 +35,21 @@ export async function deployDebtContractOnChain(api: ConnectedAPI, state: DebtPr
 
 export async function callSettleDebtCircuit(api: ConnectedAPI, contractAddress: string, state: DebtPrivateState) {
   const providers = await createMidnightProviders<DebtPrivateState, 'debt'>(api, 'debt');
-  const deployed = await findDeployedContract(providers, {
+  providers.privateStateProvider.setContractAddress(contractAddress);
+  await providers.privateStateProvider.set('debtPrivateState', state);
+
+  // submitCallTxAsync returns immediately after submission instead of blocking on
+  // publicDataProvider.watchForTxData, which hangs on preprod's offset:null indexer bug —
+  // the previous findDeployedContract().callTx.settleDebt() path never resolved, leaving
+  // the UI stuck on "Processing settlement…" even after wallet approval.
+  const { txId } = await submitCallTxAsync(providers as any, {
     contractAddress,
     compiledContract: getDebtCompiledContract(),
+    circuitId: 'settleDebt',
     privateStateId: 'debtPrivateState',
-    initialPrivateState: state,
-  });
-  const result = await deployed.callTx.settleDebt(state.owedAmount);
-  return { txHash: result.public.txHash };
+    args: [state.owedAmount],
+  } as any);
+  return { txHash: txId };
 }
 
 export { ledger as debtLedger };

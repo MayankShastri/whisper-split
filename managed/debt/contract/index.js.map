@@ -1,0 +1,8 @@
+{
+  "version": 3,
+  "file": "index.js",
+  "sourceRoot": "../../../",
+  "sources": ["contracts/debt.compact"],
+  "names": [],
+  "mappings": ";;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;EAAA;;;;;;;;;;;;;MASA,AAAA,UAWC;;;;;cAXyB,YAAoB;;;;;;;;;;;;;;;;;;yCAApB,YAAoB;;;;;;;;;4CAApB,YAAoB;;;OAW7C;;;;GACA;EArBD;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;IAIA;;;;;;;;;yEAA+B;IAC/B;;;;;;;;;yEAAuC;;;;;;;GAgBtC;EAdD,AAAA,gBAAkC;;0DAAlC,aAAkC;;;;;;;;;;;;;;GAAA;EAElC,AAAA,aAWC,4BAXyB,YAAoB;qDACpC;;;;;;;;;;;0HAAO;;UACT,MAAsB;UACtB,QAA6B,iBAAnB,YAAU,EAAI,MAAI;QAErB,QAAM;MACjB;;;;;;;;;2EAAO;YACP,KAAe;MAAf;;;;;;;;;;+FAAA,KAAe;;;;0EAAA;;;;;GAIlB;;;;;;;;;;;;;;;;;;;;IAhBD;qCAAA;;;;;;;;;;;0GAA+B;KAAA;IAC/B;qCAAA;;;;;;;;;;;0GAAuC;KAAA;;;;;;;;;;"
+}

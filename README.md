@@ -149,9 +149,8 @@ See [PROPOSAL.md](PROPOSAL.md).
 
 ## Demo Video
 
-One combined video covers both levels — wallet connect, debt settlement (deploy → prove equality and settle → on-chain result), and the payroll console (deploy → deposit → two independent private claims → tests/CI).
-
-[PLACEHOLDER — YouTube link]
+- Level 2 (wallet connect + circuit call): [https://youtu.be/JYeGyjziAmo](https://youtu.be/JYeGyjziAmo)
+- Level 3 (payroll deposit + claim + tests + CI): [https://youtu.be/wQ-pLnrPK5E](https://youtu.be/wQ-pLnrPK5E)
 
 ## Initial Idea
 
@@ -180,7 +179,7 @@ TODO: Add current cumulative-build screenshots (compile, tests, Lace connection,
 - [x] Contract deployed to Preprod with verifiable address (fresh deploy + settle, both confirmed on explorer — see Contract Address section)
 - [x] Minimum 8 meaningful commits (14 since the Level 1 tip)
 - [x] Live demo link
-- [ ] Demo video link
+- [x] Demo video link
 
 ### Level 3
 
@@ -192,4 +191,4 @@ TODO: Add current cumulative-build screenshots (compile, tests, Lace connection,
 - [x] PROPOSAL.md
 - [x] dApp builds with zero errors
 - [x] Live demo link
-- [ ] Demo video link
+- [x] Demo video link

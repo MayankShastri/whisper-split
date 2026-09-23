@@ -159,7 +159,14 @@ Shared expenses are personal: who owes what shouldn't be broadcast to the group,
 
 ## Screenshots
 
-Historical Level 1 assets: `screenshots/Compile output.png`, `screenshots/Test output.png`, `screenshots/Console.png`.
+### 1. Compact Compiler Output (Level 1)
+![Compact Compile Output](screenshots/Compile%20output.png)
+
+### 2. Vitest Test Suite (Level 1, 5/5 Passing)
+![Vitest Test Suite Output](screenshots/Test%20output.png)
+
+### 3. Settlement Dashboard & Contract Address (Level 1)
+![Settlement Dashboard and Deployed Contract](screenshots/Console.png)
 
 TODO: Add current cumulative-build screenshots (compile, tests, Lace connection, indexed results) — without exposing private inputs or participant vouchers.
 

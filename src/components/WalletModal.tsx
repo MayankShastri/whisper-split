@@ -24,12 +24,9 @@ export const WalletModal: React.FC<WalletModalProps> = ({
         WebkitBackdropFilter: 'blur(8px)',
       }}
     >
-      {/* Background click to close */}
       <div className="absolute inset-0 cursor-pointer" onClick={onClose}></div>
 
-      {/* Modal Box */}
       <div className="relative z-10 w-full max-w-md bg-[#0C0C0E] border border-[#F5F1E8]/20 p-6 sm:p-8 shadow-2xl font-mono mx-auto my-auto">
-        {/* Blueprint corner brackets */}
         <div className="absolute top-0 left-0 w-2 h-2 border-b border-r border-[#F5F1E8]/40"></div>
         <div className="absolute top-0 right-0 w-2 h-2 border-b border-l border-[#F5F1E8]/40"></div>
         <div className="absolute bottom-0 left-0 w-2 h-2 border-t border-r border-[#F5F1E8]/40"></div>
@@ -54,7 +51,6 @@ export const WalletModal: React.FC<WalletModalProps> = ({
         </div>
 
         <div className="space-y-4 mb-6">
-          {/* Option 1: 1AM Wallet */}
           <button
             onClick={() => onSelectWallet('1am')}
             disabled={isConnecting}
@@ -78,7 +74,6 @@ export const WalletModal: React.FC<WalletModalProps> = ({
             </span>
           </button>
 
-          {/* Option 2: Lace Wallet */}
           <button
             onClick={() => onSelectWallet('mnLace')}
             disabled={isConnecting}

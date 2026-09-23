@@ -48,7 +48,7 @@ export const WalletConnect: React.FC<WalletConnectProps> = ({
   }
 
   if (isConnected && address) {
-    const truncated = `${address.slice(0, 12)}...${address.slice(-6)}`;
+    const truncated = `${address.slice(0, 10)}...${address.slice(-6)}`;
     return (
       <div className="flex items-center gap-3 bg-[#0C0C0E] border border-primary/10 px-4 py-2 text-xs font-mono">
         <span className="relative flex h-2 w-2">
@@ -100,3 +100,5 @@ export const WalletConnect: React.FC<WalletConnectProps> = ({
     </>
   );
 };
+
+export default WalletConnect;

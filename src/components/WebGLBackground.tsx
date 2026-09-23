@@ -77,8 +77,8 @@ export const WebGLBackground: React.FC = () => {
     function resize() {
       if (!canvas || !gl) return;
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
-      canvas.width = canvas.clientWidth * dpr;
-      canvas.height = canvas.clientHeight * dpr;
+      canvas.width = window.innerWidth * dpr;
+      canvas.height = window.innerHeight * dpr;
       gl.viewport(0, 0, canvas.width, canvas.height);
     }
 
@@ -87,8 +87,8 @@ export const WebGLBackground: React.FC = () => {
 
     let animId: number;
     function frame(t: number) {
-      if (!gl) return;
-      gl.uniform2f(uRes, canvas!.width, canvas!.height);
+      if (!gl || !canvas) return;
+      gl.uniform2f(uRes, canvas.width, canvas.height);
       gl.uniform1f(uTime, t * 0.001);
       gl.drawArrays(gl.TRIANGLES, 0, 3);
       animId = requestAnimationFrame(frame);

@@ -22,3 +22,9 @@ AGENTS.md
 # graft's local graph cache — regenerable, not committed (run `graft build`).
 graft/
 
+# personal Claude Code settings (contains secrets, e.g. TYPESAFE_API_KEY)
+.claude/settings.local.json
+
+# opencode tooling config from earlier work on this project — not part of the dApp
+.opencode/
+

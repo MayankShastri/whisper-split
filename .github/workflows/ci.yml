@@ -1,0 +1,43 @@
+name: Whisper Split CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Install Compact CLI
+        run: |
+          curl --proto '=https' --tlsv1.2 -LsSf https://github.com/midnightntwrk/compact/releases/download/compact-v0.5.2/compact-x86_64-unknown-linux-musl.tar.xz -o compact.tar.xz
+          echo 'da594f9edfe8d87312c0c500443702b5cfa9d7e17c43433b6ed6580a36278ac8  compact.tar.xz' | sha256sum --check
+          mkdir -p .compact-cli
+          tar -xf compact.tar.xz -C .compact-cli --strip-components=1
+          echo "$GITHUB_WORKSPACE/.compact-cli" >> "$GITHUB_PATH"
+      - name: Install pinned Compact compiler
+        run: npm run compact:setup
+      - name: Compile both contracts and publish proving assets
+        run: npm run compile
+      - name: Typecheck
+        if: ${{ !cancelled() }}
+        run: npm run typecheck
+      - name: Test
+        if: ${{ !cancelled() }}
+        run: npm test
+      - name: Build
+        if: ${{ !cancelled() }}
+        run: npm run build

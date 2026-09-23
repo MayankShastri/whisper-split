@@ -1,0 +1,73 @@
+// Whisper Split — Level 3 Private Payroll & Payment Splits Contract
+//
+// PUBLIC LEDGER STATE:
+// - sharesRoot: Field (Merkle root committing to all participant shares and identities)
+// - depositAmount: Uint<128> (Real unshielded NIGHT currently held in contract custody)
+// - distributionCount: Counter (Tracks total successful share payouts/claims)
+// - claimed: Map<Bytes<32>, Boolean> (Per-participant public claim status: claimed or not)
+//
+// PRIVATE WITNESSES:
+// - getMyShare(): Uint<64> (Participant's private share amount)
+// - getMySecretSalt(): Bytes<32> (Participant's private salt binding leaf to identity)
+// - getMerkleProof(): MerkleTreePath<16, Bytes<32>> (Merkle membership proof)
+//
+// PRIVACY MODEL:
+// - NIGHT is always an unshielded token — its balances and transfers are public by protocol
+//   design; there is no shielded form of NIGHT to custody privately. Individual share
+//   amounts are therefore private up until the moment a participant claims: the Merkle
+//   proof that determines who is entitled to how much is verified entirely against private
+//   witnesses, so no one (not other participants, not observers) can see the full
+//   allocation breakdown. Only when a specific participant calls claim() does *that
+//   participant's own* payout amount become visible on-chain, as an unavoidable property
+//   of a real NIGHT payment — every other, still-unclaimed share stays fully hidden.
+
+pragma language_version 0.23.0;
+
+import CompactStandardLibrary;
+
+export ledger sharesRoot: Field;
+export ledger depositAmount: Uint<128>;
+export ledger distributionCount: Counter;
+export ledger claimed: Map<Bytes<32>, Boolean>;
+
+witness getMyShare(): Uint<64>;
+witness getMySecretSalt(): Bytes<32>;
+witness getMerkleProof(): MerkleTreePath<16, Bytes<32>>;
+
+pure circuit computeLeaf(participantId: Bytes<32>, share: Uint<64>, salt: Bytes<32>): Bytes<32> {
+  return persistentHash<Vector<3, Bytes<32>>>(
+    [participantId, salt, share as Field as Bytes<32>]
+  );
+}
+
+export circuit deposit(amount: Uint<128>, root: Field): [] {
+  assert(depositAmount == 0, "Deposit already initialized");
+  assert(amount > 0, "Deposit amount must be positive");
+  receiveUnshielded(nativeToken(), disclose(amount));
+  depositAmount = disclose(amount);
+  sharesRoot = disclose(root);
+}
+
+export circuit claim(participantId: Bytes<32>, recipient: UserAddress): [] {
+  const pubId = disclose(participantId);
+  assert(disclose(recipient.bytes) == pubId, "Recipient must match claimed identity");
+  assert(claimed.member(pubId) == false || claimed.lookup(pubId) == false, "Share already claimed");
+
+  const share = getMyShare();
+  const salt = getMySecretSalt();
+  const leaf = computeLeaf(pubId, share, salt);
+  const path = getMerkleProof();
+  assert(path.leaf == leaf, "Merkle path leaf mismatch");
+
+  const root = merkleTreePathRoot<16, Bytes<32>>(path);
+  assert(sharesRoot == root.field, "Invalid Merkle proof for private share");
+
+  const share128 = share as Uint<128>;
+  assert(depositAmount >= disclose(share128), "Insufficient pooled funds in contract");
+  depositAmount = disclose((depositAmount - share128) as Uint<128>);
+
+  sendUnshielded(nativeToken(), disclose(share128), right<ContractAddress, UserAddress>(disclose(recipient)));
+
+  claimed.insert(pubId, true);
+  distributionCount.increment(1);
+}

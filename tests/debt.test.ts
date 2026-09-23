@@ -1,17 +1,19 @@
 import { describe, it, expect } from 'vitest';
 import * as RT from '@midnight-ntwrk/compact-runtime';
-import { Contract, ledger } from '../managed/debt/contract/index.js';
+import { Contract, ledger, type Witnesses } from '../managed/debt/contract/index.js';
 
 const COIN = '0'.repeat(64);
 const ADDR = RT.sampleContractAddress();
 
-const witnesses = {
+type DebtPrivateState = { owedAmount: bigint };
+
+const witnesses: Witnesses<DebtPrivateState> = {
   getOwedAmount: ({ privateState }) => [privateState, privateState.owedAmount],
 };
 
 const setup = async (owedAmount = 100n) => {
-  const contract = new Contract(witnesses);
-  const privateState = { owedAmount };
+  const contract = new Contract<DebtPrivateState>(witnesses);
+  const privateState: DebtPrivateState = { owedAmount };
   const initialZswapLocalState = RT.emptyZswapLocalState(COIN);
 
   const ctor = contract.initialState({
@@ -19,7 +21,7 @@ const setup = async (owedAmount = 100n) => {
     initialZswapLocalState,
   });
 
-  const ctx = RT.createCircuitContext(
+  const ctx: RT.CircuitContext<DebtPrivateState> = RT.createCircuitContext(
     ADDR,
     initialZswapLocalState,
     ctor.currentContractState.data,
@@ -29,7 +31,7 @@ const setup = async (owedAmount = 100n) => {
   return { contract, ctx, ctor };
 };
 
-const getState = (ctx) => ledger(ctx.currentQueryContext.state);
+const getState = (ctx: RT.CircuitContext<DebtPrivateState>) => ledger(ctx.currentQueryContext.state);
 
 describe('Whisper Split - Debt Contract', () => {
   it('1. Initializes contract with settled=false and settlementCount=0', async () => {

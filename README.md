@@ -1,32 +1,33 @@
 # Whisper Split
 
-<!-- TODO: Add real CI badge after pushing and verifying the workflow run status. -->
+![CI](https://github.com/MayankShastri/whisper-split/actions/workflows/ci.yml/badge.svg?branch=master)
 
 > A privacy-preserving expense settlement and payroll dApp on the Midnight Network. Built cumulatively across the Midnight Builder Challenge: Level 1 (private debt settlement circuit), Level 2 (Lace wallet on Preprod wired to the frontend), and Level 3 (private payroll split with Merkle-based claims) — all in one codebase.
 
 ## Live Demo
 
-[PLACEHOLDER — Vercel deployment URL, to be added after deploying the frontend]
+[https://whisper-split.vercel.app/](https://whisper-split.vercel.app/)
 
 ## Contract Address
 
 | Network | Contract | Address |
 | --- | --- | --- |
-| Preprod | Level 1/2 debt (`debt.compact`) | `2e5b7029de6660d78610ba39b67dc0e467c811dc6bf84acf996679b491a85def` |
-| Preprod | Level 3 split (`split.compact`) | `b734d28a8d9e0d456bdc6d0106b4eedf276e0e17b67c83d9bd001973f035bc45` |
+| Preprod | Level 1/2 debt (`debt.compact`) | `7be56003e58b9f442707b87ba31482638e0629aded447676a401507cbd8c9848` |
+| Preprod | Level 3 split (`split.compact`) | `8242eb8ae69b78e2aadc86ff074eb0bf8f19bdb8425f7fd4c6ef6c0a7b2bff9d` |
 
-Level 1/2 debt deployment evidence (from the original Level 1 submission):
+Level 1/2 debt deployment evidence — deploy and a real `settleDebt()` call, both independently confirmed on the Preprod explorer:
 
-- Deploy tx: [`0x4cf8dadd8f1f6b086a0992cabc675a0208a226abc357368b7bcaa2172f90b9c5`](https://preprod.midnightexplorer.com/transactions/0x4cf8dadd8f1f6b086a0992cabc675a0208a226abc357368b7bcaa2172f90b9c5)
-- Settlement circuit call tx: [`0xb961ef5d96662fd28d459b456d8ea00aa0b99e0454266410bddc68c7905d6b3e`](https://preprod.midnightexplorer.com/transactions/0xb961ef5d96662fd28d459b456d8ea00aa0b99e0454266410bddc68c7905d6b3e)
+- Deploy tx: [`47503aef6dfb5af7b3b8b0e0cdf045f0f5b7596783c63d289b5ff811a3cbbbe3`](https://preprod.midnightexplorer.com/transactions/47503aef6dfb5af7b3b8b0e0cdf045f0f5b7596783c63d289b5ff811a3cbbbe3)
+- Settlement circuit call tx: [`f98789ac4403c13ac82bdc1fefb338c2ac1f6eec1a751f415f3ae3a047f5f45a`](https://preprod.midnightexplorer.com/transactions/f98789ac4403c13ac82bdc1fefb338c2ac1f6eec1a751f415f3ae3a047f5f45a)
 
-Level 3 split deployment evidence — a full, independently verified deposit → claim round trip moving real unshielded NIGHT, not just a deploy:
+Level 3 split deployment evidence — a full, independently verified deposit → two private claims round trip moving real unshielded NIGHT (80 base units deposited, fully distributed to two distinct participants, pool custody down to 0):
 
-- Deploy tx: [`0xaa1acab883de6758492201cc15a6235d9b2cb42a6ae26b240a9c1af12017ab19`](https://preprod.midnightexplorer.com/transactions/0xaa1acab883de6758492201cc15a6235d9b2cb42a6ae26b240a9c1af12017ab19)
-- Deposit tx (200 base units of real NIGHT escrowed into contract custody): [`0xbb2f04a5b501aae82110ca2af670d4b4fd024690abc2825b762f5355da32a5a1`](https://preprod.midnightexplorer.com/transactions/0xbb2f04a5b501aae82110ca2af670d4b4fd024690abc2825b762f5355da32a5a1)
-- Claim tx (50 base units / 0.00005 NIGHT paid out to the claiming participant's own address, confirmed via the explorer's Created Outputs): [`0xc67d06a35580c3bd78b29d5f4ec0b01ee98beb3cb8cb5d9572bb7901b5e3859e`](https://preprod.midnightexplorer.com/transactions/0xc67d06a35580c3bd78b29d5f4ec0b01ee98beb3cb8cb5d9572bb7901b5e3859e)
+- Deploy tx: [`3550d3cd774ae9664ea4ced91062a0d5bcbd137b75f0acd8a8c0a9f84cb79d5b`](https://preprod.midnightexplorer.com/transactions/3550d3cd774ae9664ea4ced91062a0d5bcbd137b75f0acd8a8c0a9f84cb79d5b)
+- Deposit tx (80 base units of real NIGHT escrowed into contract custody): [`923a06e80bc372bc3b6161e11c923a306a100e8003cb4f6c7cb6e442e1f77683`](https://preprod.midnightexplorer.com/transactions/923a06e80bc372bc3b6161e11c923a306a100e8003cb4f6c7cb6e442e1f77683)
+- Claim tx, participant 1 (50 base units paid to their own address): [`b5f235529376e69cc009848cabeaf960e0115f63add8b31913c44fcd25e1f6df`](https://preprod.midnightexplorer.com/transactions/b5f235529376e69cc009848cabeaf960e0115f63add8b31913c44fcd25e1f6df)
+- Claim tx, participant 2 (30 base units paid to their own address): [`0b9a8c3ea6772b0dbdebbdc6888bde9869f4df672aa661ce38565d004172af52`](https://preprod.midnightexplorer.com/transactions/0b9a8c3ea6772b0dbdebbdc6888bde9869f4df672aa661ce38565d004172af52)
 
-Note: this address may be superseded by a fresh deployment used for the demo video (see below) — if so, update this table to the final address before submitting.
+Both participants claimed independently, each only ever proving and revealing their own share — the two claim transactions never disclose anything about the other participant's amount.
 
 ## What This Does
 
@@ -140,9 +141,7 @@ Covers both contracts — circuit logic, state transitions, rejection paths (dou
 
 ## CI/CD
 
-On every push to `master` and every pull request, GitHub Actions checks out the code, sets up Node 22, installs dependencies, compiles both contracts, and runs the test suite. See `.github/workflows/ci.yml`.
-
-TODO: Verify the workflow on a real push and add the live badge.
+On every push to `master` and every pull request, GitHub Actions checks out the code, sets up Node 22, installs dependencies, compiles both contracts, and runs the test suite. See `.github/workflows/ci.yml`. Verified green on a real push — badge above.
 
 ## Product Proposal
 
@@ -150,8 +149,9 @@ See [PROPOSAL.md](PROPOSAL.md).
 
 ## Demo Video
 
-- Level 2 (wallet connect + circuit call): [PLACEHOLDER — YouTube link]
-- Level 3 (payroll deposit + claim + tests + CI): [PLACEHOLDER — YouTube link]
+One combined video covers both levels — wallet connect, debt settlement (deploy → prove equality and settle → on-chain result), and the payroll console (deploy → deposit → two independent private claims → tests/CI).
+
+[PLACEHOLDER — YouTube link]
 
 ## Initial Idea
 
@@ -177,18 +177,19 @@ TODO: Add current cumulative-build screenshots (compile, tests, Lace connection,
 - [x] Lace connect / disconnect implemented (DApp Connector API v4, Preprod)
 - [x] Circuit called successfully from the frontend (`settleDebt`)
 - [x] Observable privacy behavior (equality proved, amounts not rendered or published)
-- [ ] Contract deployed to Preprod with verifiable address (historical Level 1 address above; fresh demo deployment TODO)
-- [ ] Minimum 8 meaningful commits
-- [ ] Live demo link
+- [x] Contract deployed to Preprod with verifiable address (fresh deploy + settle, both confirmed on explorer — see Contract Address section)
+- [x] Minimum 8 meaningful commits (14 since the Level 1 tip)
+- [x] Live demo link
 - [ ] Demo video link
 
 ### Level 3
 
 - [x] 3+ tests passing (11/11)
 - [x] CI/CD pipeline configured on push/PR
-- [ ] CI badge in README (needs a verified run)
+- [x] CI badge in README (verified green run)
 - [x] Contract address in README (deploy/deposit/claim all verified on explorer — see Contract Address section)
 - [x] Privacy Model section
 - [x] PROPOSAL.md
 - [x] dApp builds with zero errors
-- [ ] Live demo link + demo video link
+- [x] Live demo link
+- [ ] Demo video link

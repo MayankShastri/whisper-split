@@ -167,7 +167,8 @@ Shared expenses are personal: who owes what shouldn't be broadcast to the group,
 ### 3. Settlement Dashboard & Contract Address (Level 1)
 ![Settlement Dashboard and Deployed Contract](screenshots/Console.png)
 
-TODO: Add current cumulative-build screenshots (compile, tests, Lace connection, indexed results) — without exposing private inputs or participant vouchers.
+### 4. Payroll Console (Level 3)
+![Payroll Console — Deposit & Allocate, Claim Share, Batch Payroll Allocations](screenshots/Payroll%20console.png)
 
 ## Submission Checklist
 

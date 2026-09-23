@@ -6,21 +6,27 @@
 
 ## Live Demo
 
-TODO: Deploy the frontend (Vercel/Netlify) and paste the verified hosting URL.
+[PLACEHOLDER — Vercel deployment URL, to be added after deploying the frontend]
 
 ## Contract Address
 
 | Network | Contract | Address |
 | --- | --- | --- |
 | Preprod | Level 1/2 debt (`debt.compact`) | `2e5b7029de6660d78610ba39b67dc0e467c811dc6bf84acf996679b491a85def` |
-| Preprod | Level 3 split (`split.compact`) | TODO: Deploy and paste the verified address |
+| Preprod | Level 3 split (`split.compact`) | `b734d28a8d9e0d456bdc6d0106b4eedf276e0e17b67c83d9bd001973f035bc45` |
 
 Level 1/2 debt deployment evidence (from the original Level 1 submission):
 
 - Deploy tx: [`0x4cf8dadd8f1f6b086a0992cabc675a0208a226abc357368b7bcaa2172f90b9c5`](https://preprod.midnightexplorer.com/transactions/0x4cf8dadd8f1f6b086a0992cabc675a0208a226abc357368b7bcaa2172f90b9c5)
 - Settlement circuit call tx: [`0xb961ef5d96662fd28d459b456d8ea00aa0b99e0454266410bddc68c7905d6b3e`](https://preprod.midnightexplorer.com/transactions/0xb961ef5d96662fd28d459b456d8ea00aa0b99e0454266410bddc68c7905d6b3e)
 
-TODO: Re-verify the above on the explorer and record the split contract's deployment tx after deploying.
+Level 3 split deployment evidence — a full, independently verified deposit → claim round trip moving real unshielded NIGHT, not just a deploy:
+
+- Deploy tx: [`0xaa1acab883de6758492201cc15a6235d9b2cb42a6ae26b240a9c1af12017ab19`](https://preprod.midnightexplorer.com/transactions/0xaa1acab883de6758492201cc15a6235d9b2cb42a6ae26b240a9c1af12017ab19)
+- Deposit tx (200 base units of real NIGHT escrowed into contract custody): [`0xbb2f04a5b501aae82110ca2af670d4b4fd024690abc2825b762f5355da32a5a1`](https://preprod.midnightexplorer.com/transactions/0xbb2f04a5b501aae82110ca2af670d4b4fd024690abc2825b762f5355da32a5a1)
+- Claim tx (50 base units / 0.00005 NIGHT paid out to the claiming participant's own address, confirmed via the explorer's Created Outputs): [`0xc67d06a35580c3bd78b29d5f4ec0b01ee98beb3cb8cb5d9572bb7901b5e3859e`](https://preprod.midnightexplorer.com/transactions/0xc67d06a35580c3bd78b29d5f4ec0b01ee98beb3cb8cb5d9572bb7901b5e3859e)
+
+Note: this address may be superseded by a fresh deployment used for the demo video (see below) — if so, update this table to the final address before submitting.
 
 ## What This Does
 
@@ -144,8 +150,8 @@ See [PROPOSAL.md](PROPOSAL.md).
 
 ## Demo Video
 
-- Level 2 (wallet connect + circuit call): TODO paste link
-- Level 3 (payroll claim + tests + CI): TODO paste link
+- Level 2 (wallet connect + circuit call): [PLACEHOLDER — YouTube link]
+- Level 3 (payroll deposit + claim + tests + CI): [PLACEHOLDER — YouTube link]
 
 ## Initial Idea
 
@@ -171,10 +177,10 @@ TODO: Add current cumulative-build screenshots (compile, tests, Lace connection,
 
 ### Level 3
 
-- [x] 3+ tests passing (10/10)
+- [x] 3+ tests passing (11/11)
 - [x] CI/CD pipeline configured on push/PR
 - [ ] CI badge in README (needs a verified run)
-- [ ] Contract address in README (TODO: split deployment)
+- [x] Contract address in README (deploy/deposit/claim all verified on explorer — see Contract Address section)
 - [x] Privacy Model section
 - [x] PROPOSAL.md
 - [x] dApp builds with zero errors

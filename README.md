@@ -98,7 +98,7 @@ path.
 - **Compact** — smart contract language (compiler 0.31.1, language version 0.23.0, runtime 0.16.0)
 - **Midnight.js SDK** — `@midnight-ntwrk/*` packages v4.1.1
 - **React 19 + Vite 5 + TypeScript + Tailwind CSS** — frontend
-- **Lace wallet** — browser wallet via DApp Connector API v4
+- **1AM or Lace wallet** — browser wallet via DApp Connector API v4
 - **Vitest** — circuit and state test suite (11 tests)
 - **GitHub Actions** — CI/CD
 - **Docker** — optional local proof server (`midnightnetwork/proof-server` on port 6300)
@@ -107,7 +107,7 @@ path.
 
 - Node.js v22+
 - The Compact CLI installed and available; run `npm run compact:setup` to install the pinned compiler before compiling. Windows also requires WSL.
-- Lace wallet browser extension, configured for Preprod, with Preprod funds/DUST
+- 1AM or Lace wallet browser extension, configured for Preprod, with Preprod funds/DUST
 - Docker (only if running the local proof server)
 
 ## Setup & Run Locally
@@ -122,7 +122,7 @@ npm run typecheck
 npm run dev       # → http://localhost:5173
 ```
 
-Then in the app: select Lace/Preprod, connect, and use the **Debt settlement** screen (Level 1/2 flow) or the **Payroll console** (Level 3 flow).
+Then in the app: connect your 1AM or Lace wallet on Preprod, and use the **Debt settlement** screen (Level 1/2 flow) or the **Payroll console** (Level 3 flow).
 
 ## Run Tests
 
@@ -170,6 +170,9 @@ Shared expenses are personal: who owes what shouldn't be broadcast to the group,
 ### 4. Payroll Console (Level 3)
 ![Payroll Console — Deposit & Allocate, Claim Share, Batch Payroll Allocations](screenshots/Payroll%20console.png)
 
+### 5. Vitest Test Suite (Level 3, 11/11 Passing — Both Contracts)
+![Level 3 Test Output — all 11 tests passing across debt and split contracts](screenshots/Level%203%20Test%20Output.png)
+
 ## Submission Checklist
 
 ### Level 2
@@ -178,7 +181,7 @@ Shared expenses are personal: who owes what shouldn't be broadcast to the group,
 - [x] Circuit called successfully from the frontend (`settleDebt`)
 - [x] Observable privacy behavior (equality proved, amounts not rendered or published)
 - [x] Contract deployed to Preprod with verifiable address (fresh deploy + settle, both confirmed on explorer — see Contract Address section)
-- [x] Minimum 8 meaningful commits (14 since the Level 1 tip)
+- [x] Minimum 8 meaningful commits (18 since the Level 1 tip)
 - [x] Live demo link
 - [x] Demo video link
 

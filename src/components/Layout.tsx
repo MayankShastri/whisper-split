@@ -12,6 +12,8 @@ type LayoutProps = {
   onConnectWallet: (walletKey: '1am' | 'mnLace') => void;
   onDisconnect: () => void;
   onLogoClick?: () => void;
+  onOpenConsole?: () => void;
+  isConsoleActive?: boolean;
 };
 
 export const Layout: React.FC<LayoutProps> = ({
@@ -24,6 +26,8 @@ export const Layout: React.FC<LayoutProps> = ({
   onConnectWallet,
   onDisconnect,
   onLogoClick,
+  onOpenConsole,
+  isConsoleActive = false,
 }) => {
   return (
     <div className="relative min-h-screen bg-[#0A0A0B] text-[#F5F1E8] font-mono selection:bg-[#2596be] selection:text-[#0A0A0B] overflow-x-hidden flex flex-col justify-between">
@@ -32,15 +36,34 @@ export const Layout: React.FC<LayoutProps> = ({
       <header className="relative z-20 border-b border-[#F5F1E8]/10 bg-[#0A0A0B]/90 backdrop-blur-md sticky top-0 px-6 py-4 flex items-center justify-between">
         <button
           onClick={onLogoClick}
-          className="text-xl font-light tracking-tighter uppercase font-serif hover:text-accent transition-colors flex items-center gap-3 text-left"
+          className="text-xl font-light tracking-tighter uppercase font-serif hover:text-accent transition-colors flex items-center gap-3 text-left cursor-pointer"
         >
           <span>WHISPER SPLIT</span>
           <span className="text-[10px] font-mono tracking-widest uppercase text-accent bg-[#2596be]/10 px-2 py-0.5 border border-[#2596be]/20">
-            L2 // PREPROD
+            L1–L3 // PREPROD
           </span>
         </button>
 
         <div className="flex items-center gap-6">
+          <nav className="hidden sm:flex items-center gap-4 text-xs tracking-widest uppercase">
+            <button
+              onClick={onLogoClick}
+              className={`transition-colors cursor-pointer ${
+                !isConsoleActive ? 'text-accent font-semibold' : 'text-[#F5F1E8]/60 hover:text-[#F5F1E8]'
+              }`}
+            >
+              Overview
+            </button>
+            <button
+              onClick={onOpenConsole}
+              className={`transition-colors cursor-pointer ${
+                isConsoleActive ? 'text-accent font-semibold' : 'text-[#F5F1E8]/60 hover:text-[#F5F1E8]'
+              }`}
+            >
+              Payroll Console
+            </button>
+          </nav>
+
           <WalletConnect
             address={walletAddress}
             walletName={walletName}
@@ -59,7 +82,7 @@ export const Layout: React.FC<LayoutProps> = ({
 
       <footer className="relative z-10 border-t border-[#F5F1E8]/10 bg-[#050506] py-8 px-6 text-xs text-[#F5F1E8]/40 flex flex-col md:flex-row items-center justify-between gap-4">
         <div>
-          <span>© 2026 Whisper Split. Zero-Knowledge Debt Settlement.</span>
+          <span>© 2026 Whisper Split. Zero-Knowledge Payroll & Payment Splits on Midnight.</span>
         </div>
         <div className="flex items-center gap-6 text-[10px] tracking-widest uppercase">
           <span className="text-accent">// 1AM & LACE COMPATIBLE</span>
@@ -69,3 +92,5 @@ export const Layout: React.FC<LayoutProps> = ({
     </div>
   );
 };
+
+export default Layout;

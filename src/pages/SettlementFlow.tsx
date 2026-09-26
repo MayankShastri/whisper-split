@@ -29,8 +29,14 @@ export const SettlementFlow: React.FC<Props> = ({ onBackToLanding, onOpenWalletM
   const [depositPoolHex, setDepositPoolHex] = useState('');
   const [claimPoolHex, setClaimPoolHex] = useState('');
   const poolIdHex = tab === 'deposit' ? depositPoolHex : claimPoolHex;
-  const { contractState, loading, error: stateError, refetch } = useContractState(contractAddress, poolIdHex);
+  const { contractState, loading, error: stateError, refetch, isClaimed } = useContractState(contractAddress, poolIdHex);
   const validAddress = /^[0-9a-f]{64}$/i.test(contractAddress);
+  // Claim pre-check from public ledger state; the private share is compared locally, never rendered.
+  const claimBlock = !voucherReady || !contractState || !voucher.current ? null
+    : !contractState.poolExists ? 'Pool does not exist on this contract yet.'
+    : isClaimed(voucher.current.participantIdBytes) ? 'This voucher has already been claimed.'
+    : contractState.depositAmount < voucher.current.share ? 'Pool balance is too low for this voucher.'
+    : null;
   const button = 'border border-accent px-4 py-3 text-xs uppercase disabled:opacity-40';
   const panel = 'p-6 md:p-8 border border-[#F5F1E8]/15 bg-[#0C0C0E]/90 space-y-5';
 
@@ -236,7 +242,14 @@ export const SettlementFlow: React.FC<Props> = ({ onBackToLanding, onOpenWalletM
       <input id="payroll-voucher" type="file" accept="application/json,.json" disabled={busy || !validAddress} onChange={event => { const file = event.target.files?.[0]; event.target.value = ''; void loadVoucher(file); }} />
       <p role="status" className="text-xs">{voucherReady ? 'Voucher ready' : 'No voucher loaded'}</p>
       {claimPoolHex && <p className="text-xs break-all">Voucher pool ID: <span className="text-accent">{claimPoolHex}</span></p>}
-      <button className={button} disabled={busy || !voucherReady || !validAddress} onClick={() => void execute('claim')}>Generate proof & claim payout</button>
+      {voucherReady && contractState && voucher.current && <ul className="text-xs space-y-1">
+        <li>Pool exists: <span className="text-accent">{contractState.poolExists ? 'Yes' : 'No'}</span></li>
+        <li>Pool remaining balance: <span className="text-accent">{contractState.depositAmount.toString()} base units</span></li>
+        <li>Claims so far: <span className="text-accent">{contractState.distributionCount.toString()}</span></li>
+        <li>This voucher: <span className="text-accent">{isClaimed(voucher.current.participantIdBytes) ? 'Already claimed' : 'Not yet claimed'}</span></li>
+      </ul>}
+      {claimBlock && <p role="status" className="text-xs text-red-400">{claimBlock}</p>}
+      <button className={button} disabled={busy || !voucherReady || !validAddress || !!claimBlock} onClick={() => void execute('claim')}>Generate proof & claim payout</button>
     </section>}
     {message && <p role="status" className="text-sm text-accent">{message}</p>}
     {(error || stateError) && <p role="alert" className="text-sm text-red-400">{error || stateError}</p>}

@@ -10,6 +10,7 @@ export type SplitContractState = {
   distributionCount: bigint;
   poolExists: boolean;
   claimedMap: Map<string, boolean>;
+  pools: Array<{ idHex: string; depositAmount: bigint; distributionCount: bigint }>;
 };
 
 // Reads the selected pool's entries from the multi-pool ledger Maps; the contract itself may host many pools.
@@ -37,6 +38,11 @@ export const useContractState = (contractAddress: string | null, poolIdHex?: str
       const parsed = ledger(raw.data);
       const claimedMap = new Map<string, boolean>();
       for (const [key, value] of parsed.claimed) claimedMap.set(toHex(key), value);
+      const pools = [...parsed.poolDepositAmount].map(([id, depositAmount]) => ({
+        idHex: toHex(id),
+        depositAmount,
+        distributionCount: parsed.poolDistributionCount.member(id) ? parsed.poolDistributionCount.lookup(id) : 0n,
+      }));
       const poolId = poolIdHex && /^[0-9a-f]{64}$/i.test(poolIdHex) ? fromHex(poolIdHex) : null;
       const poolExists = !!poolId && parsed.poolSharesRoot.member(poolId);
       const sharesRoot = poolExists ? parsed.poolSharesRoot.lookup(poolId) : 0n;
@@ -47,6 +53,7 @@ export const useContractState = (contractAddress: string | null, poolIdHex?: str
         distributionCount: poolExists ? parsed.poolDistributionCount.lookup(poolId) : 0n,
         poolExists,
         claimedMap,
+        pools,
       });
     } catch (e) {
       console.error('useContractState refetch failed:', e);
@@ -71,6 +78,7 @@ export const useContractState = (contractAddress: string | null, poolIdHex?: str
     depositAmount: state?.depositAmount ?? 0n,
     distributionCount: state?.distributionCount ?? 0n,
     poolExists: state?.poolExists ?? false,
+    pools: state?.pools ?? [],
     lastTxHash: null as string | null,
     loading, isLoading: loading, error,
     refetch, refreshState: refetch,

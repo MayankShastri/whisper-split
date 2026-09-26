@@ -195,6 +195,15 @@ export const SettlementFlow: React.FC<Props> = ({ onBackToLanding, onOpenWalletM
     <div className="space-y-2 text-xs border-b border-[#F5F1E8]/10 pb-4">
       <p className="break-all">Selected pool: {poolIdHex || 'None (apply allocations or load a voucher)'}</p>
       <p className="break-all">Pool Merkle root: {contractState ? (contractState.poolExists ? contractState.sharesRootHex : 'Pool not initialized') : 'Unknown'}</p>
+      {contractState && <details>
+        <summary className="cursor-pointer">Pools on this contract ({contractState.pools.length})</summary>
+        <ul className="mt-2 space-y-1">
+          {contractState.pools.slice(0, 20).map(pool => <li key={pool.idHex} className={pool.idHex === poolIdHex.toLowerCase() ? 'text-accent' : ''}>
+            {pool.idHex.slice(0, 8)}…{pool.idHex.slice(-6)} · {pool.depositAmount.toString()} base units left · {pool.distributionCount.toString()} claims{pool.idHex === poolIdHex.toLowerCase() && ' (selected)'}
+          </li>)}
+          {contractState.pools.length > 20 && <li>+{contractState.pools.length - 20} more</li>}
+        </ul>
+      </details>}
       <p className="text-[#F5F1E8]/70">Claim amounts may be inferred from public pool-balance changes. Witness privacy is not a guarantee of salary confidentiality.</p>
       <button className={button} disabled={busy || loading || !validAddress} onClick={() => void refetch()}>Sync indexer</button>
     </div>

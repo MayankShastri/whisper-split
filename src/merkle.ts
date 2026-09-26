@@ -90,6 +90,13 @@ export function computeProofRoot(proof: MerkleProof): bigint {
 }
 
 /**
+ * Composite on-chain claim key: persistentHash([pad(32,"whisper-split:claim:v1"), poolId, participantId])
+ */
+export function computeClaimKey(poolId: Uint8Array, participantId: Uint8Array): Uint8Array {
+  return (contractInstance as any)._computeClaimKey_0(poolId, participantId);
+}
+
+/**
  * Build a 16-level Merkle tree over participant allocations
  */
 export function buildSplitMerkleTree(
@@ -226,6 +233,7 @@ export function buildMerkleTreeFromAllocations(allocations: ParticipantAllocatio
   }));
 
   return {
+    poolId: generateRandomSalt(),
     rootDigest: tree.root,
     rootHex: tree.rootHex,
     vouchers,
@@ -233,10 +241,11 @@ export function buildMerkleTreeFromAllocations(allocations: ParticipantAllocatio
   };
 }
 
-export function exportClaimVouchersJson(vouchers: ClaimVoucher[], contractAddress: string): string {
+export function exportClaimVouchersJson(vouchers: ClaimVoucher[], contractAddress: string, poolId: Uint8Array): string {
   return JSON.stringify(
     {
       contractAddress,
+      poolIdHex: toHex(poolId),
       generatedAt: new Date().toISOString(),
       vouchers: vouchers.map((v) => ({
         participantAddress: v.participantAddress,
@@ -259,10 +268,11 @@ export function exportClaimVouchersJson(vouchers: ClaimVoucher[], contractAddres
 /**
  * Export participant credentials to JSON
  */
-export function exportParticipantPackage(participant: ParticipantEntry, contractAddress: string) {
+export function exportParticipantPackage(participant: ParticipantEntry, contractAddress: string, poolId: Uint8Array) {
   return JSON.stringify(
     {
       contractAddress,
+      poolIdHex: toHex(poolId),
       participantId: participant.id,
       participantIdHex: '0x' + toHex(participant.participantIdBytes),
       share: participant.share.toString(),
@@ -288,6 +298,7 @@ export function exportParticipantPackage(participant: ParticipantEntry, contract
  */
 export function parseParticipantPackage(jsonStr: string): {
   contractAddress?: string;
+  poolIdBytes: Uint8Array;
   participantIdBytes: Uint8Array;
   share: bigint;
   saltBytes: Uint8Array;
@@ -297,9 +308,10 @@ export function parseParticipantPackage(jsonStr: string): {
   const participantIdBytes = data.participantIdHex
     ? fromHex(data.participantIdHex)
     : normalizeParticipantId(data.participantId || '');
+  const poolIdBytes = fromHex(data.poolIdHex ?? '');
   const share = BigInt(data.share);
   const saltBytes = fromHex(data.saltHex);
-  if (participantIdBytes.length !== 32 || saltBytes.length !== 32 || share <= 0n || share >= 2n ** 64n) throw new Error('Invalid voucher inputs');
+  if (poolIdBytes.length !== 32 || participantIdBytes.length !== 32 || saltBytes.length !== 32 || share <= 0n || share >= 2n ** 64n) throw new Error('Invalid voucher inputs');
   if (!Array.isArray(data.proof?.path) || data.proof.path.length !== 16) throw new Error('Invalid Merkle path');
 
   const proof: MerkleProof = {
@@ -317,6 +329,7 @@ export function parseParticipantPackage(jsonStr: string): {
 
   return {
     contractAddress: data.contractAddress,
+    poolIdBytes,
     participantIdBytes,
     share,
     saltBytes,

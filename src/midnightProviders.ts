@@ -263,13 +263,14 @@ export const deploySplitContractOnChain = async (
 export const callDepositCircuit = async (
   connectedAPI: ConnectedAPI,
   contractAddress: string,
+  poolId: Uint8Array,
   sharesRoot: bigint,
   totalAmount: bigint
 ) => {
   const providers = await createMidnightProviders(connectedAPI, 'split');
   const compiled = getSplitCompiledContract();
 
-  console.log(`Invoking deposit circuit on ${contractAddress} with root: ${sharesRoot} totalAmount: ${totalAmount}`);
+  console.log(`Invoking deposit circuit on ${contractAddress} pool: ${toHex(poolId)} root: ${sharesRoot} totalAmount: ${totalAmount}`);
   providers.privateStateProvider.setContractAddress(contractAddress);
   await providers.privateStateProvider.set('splitPrivateState', {
     share: 0n,
@@ -290,7 +291,7 @@ export const callDepositCircuit = async (
     compiledContract: compiled,
     circuitId: 'deposit',
     privateStateId: 'splitPrivateState',
-    args: [totalAmount, sharesRoot],
+    args: [poolId, totalAmount, sharesRoot],
   } as any);
 
   const txHash = requireTransactionId(txId);
@@ -303,6 +304,7 @@ export const callDepositCircuit = async (
 export const callClaimCircuit = async (
   connectedAPI: ConnectedAPI,
   contractAddress: string,
+  poolId: Uint8Array,
   participantId: Uint8Array,
   recipientAddressBytes: Uint8Array,
   privateShare: bigint,
@@ -336,7 +338,7 @@ export const callClaimCircuit = async (
     compiledContract: compiled,
     circuitId: 'claim',
     privateStateId: 'splitPrivateState',
-    args: [participantId, { bytes: recipientAddressBytes }],
+    args: [poolId, participantId, { bytes: recipientAddressBytes }],
   } as any);
 
   const txHash = requireTransactionId(txId);

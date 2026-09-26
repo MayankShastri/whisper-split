@@ -24,7 +24,11 @@ export const SettlementFlow: React.FC<Props> = ({ onBackToLanding, onOpenWalletM
   const tree = useRef<Tree | null>(null);
   const voucher = useRef<Voucher | null>(null);
   const [myIdentityHex, setMyIdentityHex] = useState<string | null>(null);
-  const { contractState, loading, error: stateError, refetch } = useContractState(contractAddress);
+  // One contract hosts many pools: deposit targets the applied allocations' pool, claim the voucher's pool.
+  const [depositPoolHex, setDepositPoolHex] = useState('');
+  const [claimPoolHex, setClaimPoolHex] = useState('');
+  const poolIdHex = tab === 'deposit' ? depositPoolHex : claimPoolHex;
+  const { contractState, loading, error: stateError, refetch } = useContractState(contractAddress, poolIdHex);
   const validAddress = /^[0-9a-f]{64}$/i.test(contractAddress);
   const button = 'border border-accent px-4 py-3 text-xs uppercase disabled:opacity-40';
   const panel = 'p-6 md:p-8 border border-[#F5F1E8]/15 bg-[#0C0C0E]/90 space-y-5';
@@ -34,7 +38,7 @@ export const SettlementFlow: React.FC<Props> = ({ onBackToLanding, onOpenWalletM
     if (!api) { onOpenWalletModal?.(); return; }
     if (operation.current) return;
     if (kind === 'deploy' && contractState && contractState.depositAmount > 0n
-      && !window.confirm(`This pool still holds ${contractState.depositAmount} unclaimed base units. Deploying a fresh pool does not move them — they stay claimable only via this contract address, so save it before continuing. Continue?`)) return;
+      && !window.confirm(`The selected pool still holds ${contractState.depositAmount} unclaimed base units. One contract can host many pools, so a fresh deploy is usually unnecessary — new allocations get their own pool on this contract. Deploying does not move these funds; they stay claimable only via this contract address, so save it before continuing. Continue?`)) return;
     operation.current = true;
     setBusy(true);
     setError(null);
@@ -52,14 +56,14 @@ export const SettlementFlow: React.FC<Props> = ({ onBackToLanding, onOpenWalletM
         const result = kind === 'deposit'
           ? await (() => {
               if (!tree.current) throw new Error('Allocations required');
-              return callDepositCircuit(api, contractAddress, tree.current.rootDigest, tree.current.tree.totalDeposit);
+              return callDepositCircuit(api, contractAddress, tree.current.poolId, tree.current.rootDigest, tree.current.tree.totalDeposit);
             })()
           : await (async () => {
               const input = voucher.current;
               if (!input || input.contractAddress !== contractAddress) throw new Error('Matching voucher required');
               const { unshieldedAddress } = await api.getUnshieldedAddress();
               const recipientAddressBytes = deriveUnshieldedIdentity(unshieldedAddress);
-              return callClaimCircuit(api, contractAddress, input.participantIdBytes, recipientAddressBytes, input.share, input.saltBytes, input.proof);
+              return callClaimCircuit(api, contractAddress, input.poolIdBytes, input.participantIdBytes, recipientAddressBytes, input.share, input.saltBytes, input.proof);
             })();
         if (api !== getConnectedApi()) return;
         setTxHash(result.txHash);
@@ -82,11 +86,13 @@ export const SettlementFlow: React.FC<Props> = ({ onBackToLanding, onOpenWalletM
   const applyAllocations = async (getRows: () => Promise<unknown> | unknown, source: string) => {
     tree.current = null;
     setAllocationCount(0);
+    setDepositPoolHex('');
     setError(null);
     try {
       const allocations = rowsToAllocations(await getRows());
       tree.current = buildMerkleTreeFromAllocations(allocations);
       setAllocationCount(allocations.length);
+      setDepositPoolHex(toHex(tree.current.poolId));
       setMessage('Allocations loaded in private memory. Salts generated client-side. Values are not displayed.');
     } catch (e: any) {
       console.error('Failed to load allocations:', e);
@@ -106,6 +112,7 @@ export const SettlementFlow: React.FC<Props> = ({ onBackToLanding, onOpenWalletM
     if (!file) return;
     voucher.current = null;
     setVoucherReady(false);
+    setClaimPoolHex('');
     setError(null);
     try {
       if (file.size > 1_000_000) throw new Error('File too large');
@@ -117,6 +124,7 @@ export const SettlementFlow: React.FC<Props> = ({ onBackToLanding, onOpenWalletM
         const item = data.vouchers[0];
         parsed = parseParticipantPackage(JSON.stringify({
           contractAddress: data.contractAddress,
+          poolIdHex: data.poolIdHex,
           participantIdHex: item.participantAddress,
           share: item.shareAmount,
           saltHex: item.saltHex,
@@ -128,6 +136,7 @@ export const SettlementFlow: React.FC<Props> = ({ onBackToLanding, onOpenWalletM
       if (parsed.contractAddress !== contractAddress) throw new Error('Wrong contract');
       voucher.current = parsed;
       setVoucherReady(true);
+      setClaimPoolHex(toHex(parsed.poolIdBytes));
       setMessage('Claim voucher loaded in private memory. No private values are displayed.');
     } catch {
       setError('Voucher rejected. Import one valid participant package for the selected contract, including its full Merkle path.');
@@ -137,7 +146,7 @@ export const SettlementFlow: React.FC<Props> = ({ onBackToLanding, onOpenWalletM
   const downloadVouchers = () => {
     if (!tree.current || !validAddress) return;
     for (const item of tree.current.vouchers) {
-      const blob = new Blob([exportClaimVouchersJson([item], contractAddress)], { type: 'application/json' });
+      const blob = new Blob([exportClaimVouchersJson([item], contractAddress, tree.current.poolId)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
@@ -177,7 +186,8 @@ export const SettlementFlow: React.FC<Props> = ({ onBackToLanding, onOpenWalletM
       <div>Indexer<div className="mt-2">{loading ? 'Loading…' : contractState ? 'State loaded' : 'Not verified'}</div></div>
     </div>
     <div className="space-y-2 text-xs border-b border-[#F5F1E8]/10 pb-4">
-      <p className="break-all">Shares Merkle root: {contractState?.sharesRootHex ?? 'Unknown'}</p>
+      <p className="break-all">Selected pool: {poolIdHex || 'None (apply allocations or load a voucher)'}</p>
+      <p className="break-all">Pool Merkle root: {contractState ? (contractState.poolExists ? contractState.sharesRootHex : 'Pool not initialized') : 'Unknown'}</p>
       <p className="text-[#F5F1E8]/70">Claim amounts may be inferred from public pool-balance changes. Witness privacy is not a guarantee of salary confidentiality.</p>
       <button className={button} disabled={busy || loading || !validAddress} onClick={() => void refetch()}>Sync indexer</button>
     </div>
@@ -187,6 +197,7 @@ export const SettlementFlow: React.FC<Props> = ({ onBackToLanding, onOpenWalletM
         setContractAddress(event.target.value.trim().replace(/^0x/, ''));
         voucher.current = null;
         setVoucherReady(false);
+        setClaimPoolHex('');
         setTxHash(null);
       }} placeholder="64-character contract hex" className="w-full bg-[#0A0A0B] border border-[#F5F1E8]/20 p-3 text-xs" />
       <p className="text-xs text-[#F5F1E8]/70">No deployment address is assumed. Enter your payroll deployment or deploy a fresh pool. Proving uses your wallet or its configured proof server, which must be trusted with private inputs.</p>
@@ -209,9 +220,11 @@ export const SettlementFlow: React.FC<Props> = ({ onBackToLanding, onOpenWalletM
         <input id="payroll-allocations" type="file" accept="application/json,.json" disabled={busy} onChange={event => { const file = event.target.files?.[0]; event.target.value = ''; void loadAllocations(file); }} />
       </details>
       <p role="status" className="text-xs">{allocationCount ? `${allocationCount} allocations loaded` : 'No allocations loaded'}</p>
+      {depositPoolHex && <p className="text-xs break-all">Pool ID (new, random): <span className="text-accent">{depositPoolHex}</span></p>}
+      {contractState?.poolExists && <p role="status" className="text-xs text-accent">This pool is funded on-chain. Download and distribute the vouchers; to run another payroll on this contract, apply new allocations (a new pool ID is generated).</p>}
       {validAddress && !contractState && <p className="text-xs text-[#F5F1E8]/70">Waiting for the indexer to confirm this contract address (a few seconds after a fresh deploy). Click "Sync indexer" above once it's ready — deposit stays disabled until then.</p>}
       <div className="flex flex-wrap gap-4">
-        <button className={button} disabled={busy || !allocationCount || !validAddress || !contractState} onClick={() => void execute('deposit')}>Deposit & publish root</button>
+        <button className={button} disabled={busy || !allocationCount || !validAddress || !contractState || contractState.poolExists} onClick={() => void execute('deposit')}>Deposit & publish root</button>
         <button className={button} disabled={busy || !allocationCount || !validAddress} onClick={downloadVouchers}>Download private claim vouchers</button>
       </div>
     </section>}
@@ -221,6 +234,7 @@ export const SettlementFlow: React.FC<Props> = ({ onBackToLanding, onOpenWalletM
       <label htmlFor="payroll-voucher" className="block text-xs">Private claim voucher file</label>
       <input id="payroll-voucher" type="file" accept="application/json,.json" disabled={busy || !validAddress} onChange={event => { const file = event.target.files?.[0]; event.target.value = ''; void loadVoucher(file); }} />
       <p role="status" className="text-xs">{voucherReady ? 'Voucher ready' : 'No voucher loaded'}</p>
+      {claimPoolHex && <p className="text-xs break-all">Voucher pool ID: <span className="text-accent">{claimPoolHex}</span></p>}
       <button className={button} disabled={busy || !voucherReady || !validAddress} onClick={() => void execute('claim')}>Generate proof & claim payout</button>
     </section>}
     {message && <p role="status" className="text-sm text-accent">{message}</p>}

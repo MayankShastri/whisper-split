@@ -1,16 +1,19 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
-import { createPatchedPublicDataProvider, ledger, toHex } from '../midnightProviders';
+import { createPatchedPublicDataProvider, fromHex, ledger, toHex } from '../midnightProviders';
 import { useMidnight } from './useMidnight';
+import { computeClaimKey } from '../merkle';
 
 export type SplitContractState = {
   sharesRoot: bigint;
   sharesRootHex: string;
   depositAmount: bigint;
   distributionCount: bigint;
+  poolExists: boolean;
   claimedMap: Map<string, boolean>;
 };
 
-export const useContractState = (contractAddress: string | null) => {
+// Reads the selected pool's entries from the multi-pool ledger Maps; the contract itself may host many pools.
+export const useContractState = (contractAddress: string | null, poolIdHex?: string) => {
   const { getConnectedApi, walletAddress } = useMidnight();
   const [state, setState] = useState<SplitContractState | null>(null);
   const [loading, setLoading] = useState(false);
@@ -34,11 +37,15 @@ export const useContractState = (contractAddress: string | null) => {
       const parsed = ledger(raw.data);
       const claimedMap = new Map<string, boolean>();
       for (const [key, value] of parsed.claimed) claimedMap.set(toHex(key), value);
+      const poolId = poolIdHex && /^[0-9a-f]{64}$/i.test(poolIdHex) ? fromHex(poolIdHex) : null;
+      const poolExists = !!poolId && parsed.poolSharesRoot.member(poolId);
+      const sharesRoot = poolExists ? parsed.poolSharesRoot.lookup(poolId) : 0n;
       if (request === requestId.current) setState({
-        sharesRoot: parsed.sharesRoot,
-        sharesRootHex: '0x' + parsed.sharesRoot.toString(16),
-        depositAmount: parsed.depositAmount,
-        distributionCount: parsed.distributionCount,
+        sharesRoot,
+        sharesRootHex: poolExists ? '0x' + sharesRoot.toString(16) : '',
+        depositAmount: poolExists ? parsed.poolDepositAmount.lookup(poolId) : 0n,
+        distributionCount: poolExists ? parsed.poolDistributionCount.lookup(poolId) : 0n,
+        poolExists,
         claimedMap,
       });
     } catch (e) {
@@ -47,18 +54,23 @@ export const useContractState = (contractAddress: string | null) => {
     } finally {
       if (request === requestId.current) setLoading(false);
     }
-  }, [contractAddress, walletAddress, getConnectedApi]);
+  }, [contractAddress, poolIdHex, walletAddress, getConnectedApi]);
   useEffect(() => { void refetch(); return () => { requestId.current += 1; }; }, [refetch]);
   const isClaimed = useCallback((id: string | Uint8Array) => {
-    const hex = typeof id === 'string' ? id.replace(/^0x/, '').toLowerCase() : toHex(id);
-    return state?.claimedMap.get(hex) === true;
-  }, [state]);
+    try {
+      const bytes = typeof id === 'string' ? fromHex(id.trim()) : id;
+      return state?.claimedMap.get(toHex(computeClaimKey(fromHex(poolIdHex ?? ''), bytes))) === true;
+    } catch {
+      return false; // malformed participant or pool id
+    }
+  }, [state, poolIdHex]);
   const refreshAfterSubmission = useCallback(() => { void refetch(); }, [refetch]);
   return {
     sharesRoot: state?.sharesRoot ?? 0n,
     sharesRootHex: state?.sharesRootHex ?? '',
     depositAmount: state?.depositAmount ?? 0n,
     distributionCount: state?.distributionCount ?? 0n,
+    poolExists: state?.poolExists ?? false,
     lastTxHash: null as string | null,
     loading, isLoading: loading, error,
     refetch, refreshState: refetch,

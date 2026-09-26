@@ -25,6 +25,7 @@ export const SettlementFlow: React.FC<Props> = ({ onBackToLanding, onOpenWalletM
   const tree = useRef<Tree | null>(null);
   const voucher = useRef<Voucher | null>(null);
   const [myIdentityHex, setMyIdentityHex] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
   // One contract hosts many pools: deposit targets the applied allocations' pool, claim the voucher's pool.
   const [depositPoolHex, setDepositPoolHex] = useState('');
   const [claimPoolHex, setClaimPoolHex] = useState('');
@@ -223,7 +224,10 @@ export const SettlementFlow: React.FC<Props> = ({ onBackToLanding, onOpenWalletM
       <h2 className="text-xl font-serif">Your Payout Identity</h2>
       <p className="text-xs">The 32-byte identity derived from your connected wallet's unshielded address — NIGHT payouts are always unshielded, so this (not a shielded key) is what claim() pays out to. Use this exact value as a participantAddress (or use "Add my address" below) for any row you intend to claim yourself.</p>
       <button className={button} disabled={busy} onClick={() => void revealMyIdentity()}>Reveal my identity</button>
-      {myIdentityHex && <p className="text-xs break-all text-accent">{myIdentityHex}</p>}
+      {myIdentityHex && <div className="flex items-center gap-3">
+        <p className="text-xs break-all text-accent">{myIdentityHex}</p>
+        <button className={button} onClick={() => void navigator.clipboard.writeText(myIdentityHex).then(() => { setCopied(true); window.setTimeout(() => setCopied(false), 1500); }, () => setError('Clipboard unavailable — copy the identity manually.'))}>{copied ? 'Copied' : 'Copy'}</button>
+      </div>}
     </section>
     {tab === 'deposit' && <section className={panel}>
       <h2 className="text-xl font-serif">Batch Payroll Allocations</h2>

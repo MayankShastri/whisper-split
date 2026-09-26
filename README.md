@@ -2,18 +2,39 @@
 
 ![CI](https://github.com/MayankShastri/whisper-split/actions/workflows/ci.yml/badge.svg?branch=master)
 
-> A privacy-preserving expense settlement and payroll dApp on the Midnight Network. Built cumulatively across the Midnight Builder Challenge: Level 1 (private debt settlement circuit), Level 2 (Lace wallet on Preprod wired to the frontend), and Level 3 (private payroll split with Merkle-based claims) — all in one codebase.
+> A privacy-preserving expense settlement and payroll dApp on the Midnight Network. Built cumulatively across the Midnight Builder Challenge: Level 1 (private debt settlement circuit), Level 2 (Lace wallet on Preprod wired to the frontend), Level 3 (private payroll split with Merkle-based claims), and Level 4 (MVP: in-app allocation builder, multi-pool payroll contract, safety confirmations, and a plain-English usage guide) — all in one codebase.
+
+**Product:** X: [@WhisperSplit](https://x.com/WhisperSplit) <!-- TODO: confirm X handle -->
 
 ## Live Demo
 
 [https://whisper-split.vercel.app/](https://whisper-split.vercel.app/)
+
+## Usage
+
+Full step-by-step guide for admins and participants: **[docs/USAGE.md](docs/USAGE.md)**. Quick start:
+
+1. Open the [live demo](https://whisper-split.vercel.app/), click **Connect Wallet** (1AM or Lace, Preprod), and open **Payroll console**.
+2. Admin: paste an existing payroll contract address or click **Deploy fresh pool contract** (one contract hosts many payroll runs).
+3. Admin: collect each participant's identity (they click **Reveal my identity**), enter rows in the builder, click **Use these allocations**.
+4. Admin: click **Deposit & publish root**, then **Download private claim vouchers** and send each voucher privately to its recipient.
+5. Participant: on **Claim Share (ZK)**, paste the contract address, load your voucher, click **Generate proof & claim payout**.
+
+## What's New in Level 4
+
+- **In-app allocation builder** — enter participant rows directly (inline validation, duplicate detection, running total, **Add my address** after **Reveal my identity**); the `allocations.json` import is still available under **Import allocations.json**. Both paths share one validator (`src/allocations.ts`).
+- **Multi-pool contract** — `contracts/split.compact` now hosts many payroll runs per deployment. Every per-pool ledger field is keyed by a random 32-byte pool ID generated each time allocations are applied, and that pool ID is embedded in every voucher. No redeploy needed for the next payroll.
+- **Safety confirmation** — deploying a fresh contract while the selected pool still holds unclaimed funds now asks for confirmation first, explaining that those funds stay claimable only via the current address.
+- **Usage docs** — [docs/USAGE.md](docs/USAGE.md), a non-developer guide covering both roles, the privacy model, and troubleshooting.
+- **Cleanup** — removed the unused standalone `ClaimPanel`/`DepositPanel` components.
 
 ## Contract Address
 
 | Network | Contract | Address |
 | --- | --- | --- |
 | Preprod | Level 1/2 debt (`debt.compact`) | `7be56003e58b9f442707b87ba31482638e0629aded447676a401507cbd8c9848` |
-| Preprod | Level 3 split (`split.compact`) | `8242eb8ae69b78e2aadc86ff074eb0bf8f19bdb8425f7fd4c6ef6c0a7b2bff9d` |
+| Preprod | Level 3 split (`split.compact`, previous single-pool version) | `8242eb8ae69b78e2aadc86ff074eb0bf8f19bdb8425f7fd4c6ef6c0a7b2bff9d` |
+| Preprod | Level 4 multi-pool split (`split.compact`) | `TODO_LEVEL4_CONTRACT_ADDRESS` |
 
 Level 1/2 debt deployment evidence — deploy and a real `settleDebt()` call, both independently confirmed on the Preprod explorer:
 
@@ -29,15 +50,24 @@ Level 3 split deployment evidence — a full, independently verified deposit →
 
 Both participants claimed independently, each only ever proving and revealing their own share — the two claim transactions never disclose anything about the other participant's amount.
 
+Level 4 multi-pool split deployment evidence (pending — not yet deployed or verified on-chain):
+
+- Deploy tx: `TODO_LEVEL4_DEPLOY_TX`
+- Deposit tx (pool 1): `TODO_LEVEL4_DEPOSIT_TX_1`
+- Deposit tx (pool 2, same contract): `TODO_LEVEL4_DEPOSIT_TX_2`
+- Claim tx, participant 1: `TODO_LEVEL4_CLAIM_TX_1`
+- Claim tx, participant 2: `TODO_LEVEL4_CLAIM_TX_2`
+
 ## What This Does
 
-One dApp, three levels built on the same project:
+One dApp, four levels built on the same project:
 
 1. **Level 1 — Private debt settlement** (`contracts/debt.compact`): a debtor proves `paidAmount == owedAmount` in zero knowledge. Only `settled` and `settlementCount` are public; the amounts never touch the ledger. Mismatches and repeat settlements are rejected.
 2. **Level 2 — Lace on Preprod**: the React/Vite frontend connects/disconnects the Lace wallet via the DApp Connector API (v4), deploys the debt contract, calls `settleDebt` from the browser, and reads back the indexed public state.
 3. **Level 3 — Private payroll split** (`contracts/split.compact`): an organizer deposits real NIGHT and commits to participant shares via a Merkle root. Each recipient claims their own share independently (pull, not bulk push) by proving Merkle membership plus their exact entitlement — share, salt, and proof stay private witnesses; only the claiming participant's own payout amount becomes visible, at the moment they claim.
+4. **Level 4 — MVP**: the same split contract becomes multi-pool (many payroll runs per deployment, each keyed by a random pool ID carried in every voucher), allocations are built in-app with inline validation, deploying over a pool with unclaimed funds requires confirmation, and [docs/USAGE.md](docs/USAGE.md) documents the whole flow for non-developers.
 
-Level 1/2 debt flow lives in `src/components/CircuitCall.tsx` and `src/debtProviders.ts`; the Level 3 payroll console lives in `src/pages/SettlementFlow.tsx` and `src/midnightProviders.ts`. Both share one wallet connection (`src/hooks/useMidnight.ts`).
+Level 1/2 debt flow lives in `src/components/CircuitCall.tsx` and `src/debtProviders.ts`; the payroll console (Level 3, extended in Level 4 with `src/components/AllocationBuilder.tsx`) lives in `src/pages/SettlementFlow.tsx` and `src/midnightProviders.ts`. Both share one wallet connection (`src/hooks/useMidnight.ts`).
 
 ## Privacy Model
 
@@ -49,27 +79,34 @@ Level 1/2 debt flow lives in `src/components/CircuitCall.tsx` and `src/debtProvi
 
 Limit: both amounts are prover-controlled — this proves arithmetic equality, not an authentic external debt or token transfer.
 
-### Payroll split (Level 3)
+### Payroll split (Level 3, multi-pool since Level 4)
 
-This is real fund custody, not accounting: `deposit()` escrows real NIGHT into
-the contract (`receiveUnshielded`) and `claim()` pays a participant's exact
-share back out (`sendUnshielded`). NIGHT has no shielded form at all — per
+This is real fund custody, not accounting: `deposit(poolId, amount, root)`
+escrows real NIGHT into the contract (`receiveUnshielded`) and
+`claim(poolId, participantId, recipient)` pays a participant's exact share
+back out (`sendUnshielded`). NIGHT has no shielded form at all — per
 Midnight's own docs, "there is no mechanism to move a token between shielded
 and unshielded state" — so genuine NIGHT custody is unavoidably unshielded,
 and that shapes what's actually private here:
 
-- **PUBLIC:** `sharesRoot` (Merkle root over the allocation list),
-  `depositAmount` (remaining pooled balance), `distributionCount`, the
-  `claimed` map of participant IDs, and — the moment a specific participant
-  calls `claim()` — *that participant's own* payout amount, since a real
-  NIGHT transfer's amount is inherently visible on-chain.
+- **PUBLIC:** the pool IDs themselves, and per pool: `poolSharesRoot`
+  (Merkle root over that pool's allocation list), `poolDepositAmount`
+  (remaining pooled balance), and `poolDistributionCount` (claims so far);
+  the `claimed` map, keyed by a domain-separated hash of pool ID +
+  participant ID, so which claim keys are spent is public; and — the moment
+  a specific participant calls `claim()` — *that participant's own* payout
+  amount, since a real NIGHT transfer's amount is inherently visible
+  on-chain. Each claim also reveals which pool it drew from and the
+  claimer's participant ID (it is a public circuit argument, bound to the
+  payout address) — hashing the claim key isolates pools, it does not hide
+  who claimed.
 - **PRIVATE (witness, never on-chain):** every other participant's share,
   secret salt, and Merkle path. Nothing about the full allocation breakdown
   is derivable from the deposit transaction alone.
-- **PROVED without revealing:** membership in the committed allocation list,
-  and that a claim pays out exactly the entitled amount — verified entirely
-  against private witnesses, so the Merkle root by itself reveals nothing
-  about who gets how much.
+- **PROVED without revealing:** membership in the pool's committed
+  allocation list, and that a claim pays out exactly the entitled amount —
+  verified entirely against private witnesses, so the Merkle root by itself
+  reveals nothing about who gets how much.
 - **Identity binding:** `claim()` asserts the caller's own unshielded address
   matches the claimed participant ID, so a claim can only ever pay out to
   the wallet that's actually entitled to it — participant IDs are
@@ -77,14 +114,17 @@ and that shapes what's actually private here:
 
 Limit: privacy here is *per-claim*, not *forever-hidden*. Once you claim,
 your own amount is on the public record for anyone watching that
-transaction; what stays hidden is everyone else's, for as long as they
-haven't claimed yet.
+transaction, and claim amounts can also be inferred from a pool's balance
+changes; what stays hidden is everyone else's, for as long as they haven't
+claimed yet.
 
 ## Privacy Claim
 
-An on-chain observer sees: that a deposit and later claims occurred, the
-pool's total and remaining balance, which participant IDs have claimed, and
-— for each participant who has claimed — the exact amount they received.
+An on-chain observer sees: that deposits and later claims occurred, each
+pool's ID, total and remaining balance and claim count, which claim keys
+(hashes of pool ID + participant ID) have been spent and which pool each
+claim drew from, and — for each participant who has claimed — the exact
+amount they received.
 An observer cannot see: the shares of participants who haven't claimed yet,
 any participant's secret salt, or their Merkle path. The debt contract's
 owed/paid amounts likewise never appear as stored ledger fields. Any
@@ -99,7 +139,7 @@ path.
 - **Midnight.js SDK** — `@midnight-ntwrk/*` packages v4.1.1
 - **React 19 + Vite 5 + TypeScript + Tailwind CSS** — frontend
 - **1AM or Lace wallet** — browser wallet via DApp Connector API v4
-- **Vitest** — circuit and state test suite (11 tests)
+- **Vitest** — circuit and state test suite (20 tests)
 - **GitHub Actions** — CI/CD
 - **Docker** — optional local proof server (`midnightnetwork/proof-server` on port 6300)
 
@@ -122,7 +162,7 @@ npm run typecheck
 npm run dev       # → http://localhost:5173
 ```
 
-Then in the app: connect your 1AM or Lace wallet on Preprod, and use the **Debt settlement** screen (Level 1/2 flow) or the **Payroll console** (Level 3 flow).
+Then in the app: connect your 1AM or Lace wallet on Preprod, and use the **Debt settlement** screen (Level 1/2 flow) or the **Payroll console** (Level 3/4 flow). See [docs/USAGE.md](docs/USAGE.md) for the full walkthrough.
 
 ## Run Tests
 
@@ -130,12 +170,12 @@ Then in the app: connect your 1AM or Lace wallet on Preprod, and use the **Debt 
 npm test
 ```
 
-Covers both contracts — circuit logic, state transitions, rejection paths (double settlement, double claim, insufficient funds), and privacy assertions (private witnesses never appear in ledger state). Current verified snapshot:
+Covers both contracts plus the shared allocation validator — circuit logic, state transitions, rejection paths (double settlement, double claim, insufficient funds), and privacy assertions (private witnesses never appear in ledger state). Current verified snapshot:
 
 | Command | Result |
 | --- | --- |
 | `npm run compile` | Both circuits compiled (0.31.1) |
-| `npm test` | 11/11 passing (5 debt + 6 split) |
+| `npm test` | 20/20 passing (5 debt + 5 allocations + 10 split) |
 | `npm run typecheck` | Clean (`skipLibCheck` for upstream `compact-js` declaration issues) |
 | `npm run build` | Zero-error production build |
 
@@ -151,6 +191,7 @@ See [PROPOSAL.md](PROPOSAL.md).
 
 - Level 2 (wallet connect + circuit call): [https://youtu.be/JYeGyjziAmo](https://youtu.be/JYeGyjziAmo)
 - Level 3 (payroll deposit + claim + tests + CI): [https://youtu.be/wQ-pLnrPK5E](https://youtu.be/wQ-pLnrPK5E)
+- Level 4: TODO
 
 ## Initial Idea
 
@@ -196,3 +237,12 @@ Shared expenses are personal: who owes what shouldn't be broadcast to the group,
 - [x] dApp builds with zero errors
 - [x] Live demo link
 - [x] Demo video link
+
+### Level 4
+
+- [ ] Working MVP live on Preprod with verifiable contract address (Level 4 multi-pool contract not yet deployed — `TODO_LEVEL4_CONTRACT_ADDRESS`)
+- [x] Documentation: README + setup + usage ([docs/USAGE.md](docs/USAGE.md))
+- [x] CI/CD running (`.github/workflows/ci.yml` on `master`)
+- [ ] Product X profile linked in README (handle to be confirmed)
+- [ ] Demo video
+- [x] 15+ meaningful commits (35 total)

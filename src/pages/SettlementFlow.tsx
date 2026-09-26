@@ -2,7 +2,9 @@ import React, { useRef, useState } from 'react';
 import { useMidnight } from '../hooks/useMidnight';
 import { useContractState } from '../hooks/useContractState';
 import { callDepositCircuit, callClaimCircuit, deploySplitContractOnChain, deriveUnshieldedIdentity, toHex } from '../midnightProviders';
-import { buildMerkleTreeFromAllocations, generateRandomSalt, exportClaimVouchersJson, parseParticipantPackage, type ParticipantAllocation } from '../merkle';
+import { buildMerkleTreeFromAllocations, exportClaimVouchersJson, parseParticipantPackage } from '../merkle';
+import { rowsToAllocations } from '../allocations';
+import { AllocationBuilder } from '../components/AllocationBuilder';
 
 type Props = { onBackToLanding: () => void; onOpenWalletModal?: () => void };
 type Tree = ReturnType<typeof buildMerkleTreeFromAllocations>;
@@ -74,32 +76,28 @@ export const SettlementFlow: React.FC<Props> = ({ onBackToLanding, onOpenWalletM
     }
   };
 
-  const loadAllocations = async (file?: File) => {
-    if (!file) return;
+  // Shared by the builder and the file import: same validation, same tree build.
+  const applyAllocations = async (getRows: () => Promise<unknown> | unknown, source: string) => {
     tree.current = null;
     setAllocationCount(0);
     setError(null);
     try {
-      if (file.size > 1_000_000) throw new Error('File too large');
-      const rows = JSON.parse(await file.text());
-      if (!Array.isArray(rows) || rows.length < 1 || rows.length > 256) throw new Error('Invalid rows');
-      const allocations: ParticipantAllocation[] = rows.map((row, index) => {
-        if (typeof row.participantAddress !== 'string' || !/^(0x)?[0-9a-f]{64}$/i.test(row.participantAddress)) throw new Error('Invalid identity');
-        if (typeof row.shareAmount !== 'string' || !/^[0-9]+$/.test(row.shareAmount)) throw new Error('Invalid share');
-        const shareAmount = BigInt(row.shareAmount);
-        if (shareAmount <= 0n || shareAmount >= 2n ** 64n) throw new Error('Out of range');
-        return { id: String(index), participantAddress: row.participantAddress, shareAmount, salt: generateRandomSalt() };
-      });
-      if (new Set(allocations.map(a => a.participantAddress.replace(/^0x/, '').toLowerCase())).size !== allocations.length) throw new Error('Duplicate identity');
-      const result = buildMerkleTreeFromAllocations(allocations);
-      if (result.tree.totalDeposit >= 2n ** 64n) throw new Error('Pool too large');
-      tree.current = result;
+      const allocations = rowsToAllocations(await getRows());
+      tree.current = buildMerkleTreeFromAllocations(allocations);
       setAllocationCount(allocations.length);
       setMessage('Allocations loaded in private memory. Salts generated client-side. Values are not displayed.');
     } catch (e: any) {
       console.error('Failed to load allocations:', e);
-      setError(`Allocation file rejected: ${e?.message || 'Invalid format'}. Use an array of unique 32-byte hex participantAddress values and positive Uint64 shareAmount strings.`);
+      setError(`${source} rejected: ${e?.message || 'Invalid format'}. Use unique 32-byte hex participantAddress values and positive Uint64 shareAmount strings.`);
     }
+  };
+
+  const loadAllocations = async (file?: File) => {
+    if (!file) return;
+    await applyAllocations(async () => {
+      if (file.size > 1_000_000) throw new Error('File too large');
+      return JSON.parse(await file.text());
+    }, 'Allocation file');
   };
 
   const loadVoucher = async (file?: File) => {
@@ -194,15 +192,20 @@ export const SettlementFlow: React.FC<Props> = ({ onBackToLanding, onOpenWalletM
     </section>
     <section className={panel}>
       <h2 className="text-xl font-serif">Your Payout Identity</h2>
-      <p className="text-xs">The 32-byte identity derived from your connected wallet's unshielded address — NIGHT payouts are always unshielded, so this (not a shielded key) is what claim() pays out to. Use this exact value as a participantAddress in allocations.json for any row you intend to claim yourself.</p>
+      <p className="text-xs">The 32-byte identity derived from your connected wallet's unshielded address — NIGHT payouts are always unshielded, so this (not a shielded key) is what claim() pays out to. Use this exact value as a participantAddress (or use "Add my address" below) for any row you intend to claim yourself.</p>
       <button className={button} disabled={busy} onClick={() => void revealMyIdentity()}>Reveal my identity</button>
       {myIdentityHex && <p className="text-xs break-all text-accent">{myIdentityHex}</p>}
     </section>
     {tab === 'deposit' && <section className={panel}>
       <h2 className="text-xl font-serif">Batch Payroll Allocations</h2>
-      <p className="text-xs">Import local allocation JSON containing participantAddress and shareAmount strings. participantAddress must be each recipient's own 32-byte unshielded address (not an arbitrary identity) — claim() checks it against the wallet actually claiming and pays out real NIGHT to it, so it's how funds get routed to the right person. Individual share amounts stay private via Merkle proof; the deposit total, the root, and each claimed amount (once claimed) become public.</p>
-      <label htmlFor="payroll-allocations" className="block text-xs">Private allocation file</label>
-      <input id="payroll-allocations" type="file" accept="application/json,.json" disabled={busy} onChange={event => { const file = event.target.files?.[0]; event.target.value = ''; void loadAllocations(file); }} />
+      <p className="text-xs">Enter each recipient and their share. participantAddress must be each recipient's own 32-byte unshielded address (not an arbitrary identity) — claim() checks it against the wallet actually claiming and pays out real NIGHT to it, so it's how funds get routed to the right person. Individual share amounts stay private via Merkle proof; the deposit total, the root, and each claimed amount (once claimed) become public.</p>
+      <AllocationBuilder disabled={busy} myAddress={myIdentityHex} onSubmit={rows => void applyAllocations(() => rows, 'Allocations')} />
+      <details className="text-xs">
+        <summary className="cursor-pointer">Import allocations.json</summary>
+        <p className="my-2">An array of objects with participantAddress and shareAmount strings.</p>
+        <label htmlFor="payroll-allocations" className="block">Private allocation file</label>
+        <input id="payroll-allocations" type="file" accept="application/json,.json" disabled={busy} onChange={event => { const file = event.target.files?.[0]; event.target.value = ''; void loadAllocations(file); }} />
+      </details>
       <p role="status" className="text-xs">{allocationCount ? `${allocationCount} allocations loaded` : 'No allocations loaded'}</p>
       {validAddress && !contractState && <p className="text-xs text-[#F5F1E8]/70">Waiting for the indexer to confirm this contract address (a few seconds after a fresh deploy). Click "Sync indexer" above once it's ready — deposit stays disabled until then.</p>}
       <div className="flex flex-wrap gap-4">

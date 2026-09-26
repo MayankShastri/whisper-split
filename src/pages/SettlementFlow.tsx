@@ -33,6 +33,8 @@ export const SettlementFlow: React.FC<Props> = ({ onBackToLanding, onOpenWalletM
     const api = getConnectedApi();
     if (!api) { onOpenWalletModal?.(); return; }
     if (operation.current) return;
+    if (kind === 'deploy' && contractState && contractState.depositAmount > 0n
+      && !window.confirm(`This pool still holds ${contractState.depositAmount} unclaimed base units. Deploying a fresh pool does not move them — they stay claimable only via this contract address, so save it before continuing. Continue?`)) return;
     operation.current = true;
     setBusy(true);
     setError(null);

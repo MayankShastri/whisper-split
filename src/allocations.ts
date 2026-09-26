@@ -5,7 +5,7 @@ export type AllocationRow = { participantAddress: string; shareAmount: string };
 const MAX_UINT64 = 2n ** 64n;
 
 /** Canonical form used for duplicate detection. */
-export const addressKey = (address: string) => address.trim().replace(/^0x/i, '').toLowerCase();
+export const addressKey = (address: string) => address.replace(/^0x/i, '').toLowerCase();
 
 /** Returns an error message for one row, or null if it is valid on its own. */
 export function rowError(row: any): string | null {

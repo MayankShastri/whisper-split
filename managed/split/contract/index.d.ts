@@ -13,18 +13,22 @@ export type Witnesses<PS> = {
 
 export type ImpureCircuits<PS> = {
   deposit(context: __compactRuntime.CircuitContext<PS>,
+          poolId_0: Uint8Array,
           amount_0: bigint,
           root_0: bigint): __compactRuntime.CircuitResults<PS, []>;
   claim(context: __compactRuntime.CircuitContext<PS>,
+        poolId_0: Uint8Array,
         participantId_0: Uint8Array,
         recipient_0: { bytes: Uint8Array }): __compactRuntime.CircuitResults<PS, []>;
 }
 
 export type ProvableCircuits<PS> = {
   deposit(context: __compactRuntime.CircuitContext<PS>,
+          poolId_0: Uint8Array,
           amount_0: bigint,
           root_0: bigint): __compactRuntime.CircuitResults<PS, []>;
   claim(context: __compactRuntime.CircuitContext<PS>,
+        poolId_0: Uint8Array,
         participantId_0: Uint8Array,
         recipient_0: { bytes: Uint8Array }): __compactRuntime.CircuitResults<PS, []>;
 }
@@ -34,17 +38,37 @@ export type PureCircuits = {
 
 export type Circuits<PS> = {
   deposit(context: __compactRuntime.CircuitContext<PS>,
+          poolId_0: Uint8Array,
           amount_0: bigint,
           root_0: bigint): __compactRuntime.CircuitResults<PS, []>;
   claim(context: __compactRuntime.CircuitContext<PS>,
+        poolId_0: Uint8Array,
         participantId_0: Uint8Array,
         recipient_0: { bytes: Uint8Array }): __compactRuntime.CircuitResults<PS, []>;
 }
 
 export type Ledger = {
-  readonly sharesRoot: bigint;
-  readonly depositAmount: bigint;
-  readonly distributionCount: bigint;
+  poolSharesRoot: {
+    isEmpty(): boolean;
+    size(): bigint;
+    member(key_0: Uint8Array): boolean;
+    lookup(key_0: Uint8Array): bigint;
+    [Symbol.iterator](): Iterator<[Uint8Array, bigint]>
+  };
+  poolDepositAmount: {
+    isEmpty(): boolean;
+    size(): bigint;
+    member(key_0: Uint8Array): boolean;
+    lookup(key_0: Uint8Array): bigint;
+    [Symbol.iterator](): Iterator<[Uint8Array, bigint]>
+  };
+  poolDistributionCount: {
+    isEmpty(): boolean;
+    size(): bigint;
+    member(key_0: Uint8Array): boolean;
+    lookup(key_0: Uint8Array): bigint;
+    [Symbol.iterator](): Iterator<[Uint8Array, bigint]>
+  };
   claimed: {
     isEmpty(): boolean;
     size(): bigint;

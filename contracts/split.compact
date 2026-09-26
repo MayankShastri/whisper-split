@@ -1,10 +1,12 @@
-// Whisper Split — Level 3 Private Payroll & Payment Splits Contract
+// Whisper Split — Level 3 Private Payroll & Payment Splits Contract (multi-pool)
 //
-// PUBLIC LEDGER STATE:
-// - sharesRoot: Field (Merkle root committing to all participant shares and identities)
-// - depositAmount: Uint<128> (Real unshielded NIGHT currently held in contract custody)
-// - distributionCount: Counter (Tracks total successful share payouts/claims)
-// - claimed: Map<Bytes<32>, Boolean> (Per-participant public claim status: claimed or not)
+// One deployed contract hosts many independent pools, each keyed by a random poolId: Bytes<32>.
+//
+// PUBLIC LEDGER STATE (per pool):
+// - poolSharesRoot: Map<poolId, Field> (Merkle root committing to the pool's shares and identities)
+// - poolDepositAmount: Map<poolId, Uint<128>> (Unshielded NIGHT the pool still holds in custody)
+// - poolDistributionCount: Map<poolId, Uint<64>> (Successful claims from the pool)
+// - claimed: Map<claimKey, Boolean> where claimKey = persistentHash([pad(32,"whisper-split:claim:v1"), poolId, participantId])
 //
 // PRIVATE WITNESSES:
 // - getMyShare(): Uint<64> (Participant's private share amount)
@@ -12,22 +14,17 @@
 // - getMerkleProof(): MerkleTreePath<16, Bytes<32>> (Merkle membership proof)
 //
 // PRIVACY MODEL:
-// - NIGHT is always an unshielded token — its balances and transfers are public by protocol
-//   design; there is no shielded form of NIGHT to custody privately. Individual share
-//   amounts are therefore private up until the moment a participant claims: the Merkle
-//   proof that determines who is entitled to how much is verified entirely against private
-//   witnesses, so no one (not other participants, not observers) can see the full
-//   allocation breakdown. Only when a specific participant calls claim() does *that
-//   participant's own* payout amount become visible on-chain, as an unavoidable property
-//   of a real NIGHT payment — every other, still-unclaimed share stays fully hidden.
-
+// - NIGHT is always unshielded, so balances and transfers are public by protocol design.
+//   Individual share amounts stay private until the participant claims: the Merkle proof is
+//   verified against private witnesses. Only a claim reveals that participant's own payout;
+//   every other unclaimed share in every pool stays hidden.
 pragma language_version 0.23.0;
 
 import CompactStandardLibrary;
 
-export ledger sharesRoot: Field;
-export ledger depositAmount: Uint<128>;
-export ledger distributionCount: Counter;
+export ledger poolSharesRoot: Map<Bytes<32>, Field>;
+export ledger poolDepositAmount: Map<Bytes<32>, Uint<128>>;
+export ledger poolDistributionCount: Map<Bytes<32>, Uint<64>>;
 export ledger claimed: Map<Bytes<32>, Boolean>;
 
 witness getMyShare(): Uint<64>;
@@ -40,18 +37,30 @@ pure circuit computeLeaf(participantId: Bytes<32>, share: Uint<64>, salt: Bytes<
   );
 }
 
-export circuit deposit(amount: Uint<128>, root: Field): [] {
-  assert(depositAmount == 0, "Deposit already initialized");
-  assert(amount > 0, "Deposit amount must be positive");
-  receiveUnshielded(nativeToken(), disclose(amount));
-  depositAmount = disclose(amount);
-  sharesRoot = disclose(root);
+// Composite claim key: domain-separated hash over BOTH poolId and participantId.
+pure circuit computeClaimKey(poolId: Bytes<32>, participantId: Bytes<32>): Bytes<32> {
+  return persistentHash<Vector<3, Bytes<32>>>(
+    [pad(32, "whisper-split:claim:v1"), poolId, participantId]
+  );
 }
 
-export circuit claim(participantId: Bytes<32>, recipient: UserAddress): [] {
+export circuit deposit(poolId: Bytes<32>, amount: Uint<128>, root: Field): [] {
+  const pid = disclose(poolId);
+  assert(!poolSharesRoot.member(pid), "Pool already initialized");
+  assert(amount > 0, "Deposit amount must be positive");
+  receiveUnshielded(nativeToken(), disclose(amount));
+  poolSharesRoot.insert(pid, disclose(root));
+  poolDepositAmount.insert(pid, disclose(amount));
+  poolDistributionCount.insert(pid, 0);
+}
+
+export circuit claim(poolId: Bytes<32>, participantId: Bytes<32>, recipient: UserAddress): [] {
+  const pid = disclose(poolId);
+  assert(poolSharesRoot.member(pid), "Pool does not exist");
   const pubId = disclose(participantId);
   assert(disclose(recipient.bytes) == pubId, "Recipient must match claimed identity");
-  assert(claimed.member(pubId) == false || claimed.lookup(pubId) == false, "Share already claimed");
+  const claimKey = computeClaimKey(pid, pubId);
+  assert(claimed.member(claimKey) == false || claimed.lookup(claimKey) == false, "Share already claimed");
 
   const share = getMyShare();
   const salt = getMySecretSalt();
@@ -60,14 +69,15 @@ export circuit claim(participantId: Bytes<32>, recipient: UserAddress): [] {
   assert(path.leaf == leaf, "Merkle path leaf mismatch");
 
   const root = merkleTreePathRoot<16, Bytes<32>>(path);
-  assert(sharesRoot == root.field, "Invalid Merkle proof for private share");
+  assert(poolSharesRoot.lookup(pid) == root.field, "Invalid Merkle proof for private share");
 
   const share128 = share as Uint<128>;
-  assert(depositAmount >= disclose(share128), "Insufficient pooled funds in contract");
-  depositAmount = disclose((depositAmount - share128) as Uint<128>);
+  const balance = poolDepositAmount.lookup(pid);
+  assert(balance >= disclose(share128), "Insufficient pooled funds in contract");
+  poolDepositAmount.insert(pid, disclose((balance - share128) as Uint<128>));
 
   sendUnshielded(nativeToken(), disclose(share128), right<ContractAddress, UserAddress>(disclose(recipient)));
 
-  claimed.insert(pubId, true);
-  distributionCount.increment(1);
+  claimed.insert(claimKey, true);
+  poolDistributionCount.insert(pid, (poolDistributionCount.lookup(pid) + 1) as Uint<64>);
 }

@@ -5,6 +5,7 @@ import { callDepositCircuit, callClaimCircuit, deploySplitContractOnChain, deriv
 import { buildMerkleTreeFromAllocations, exportClaimVouchersJson, parseParticipantPackage } from '../merkle';
 import { rowsToAllocations } from '../allocations';
 import { AllocationBuilder } from '../components/AllocationBuilder';
+import { describeTxError } from '../txError';
 
 type Props = { onBackToLanding: () => void; onOpenWalletModal?: () => void };
 type Tree = ReturnType<typeof buildMerkleTreeFromAllocations>;
@@ -74,7 +75,7 @@ export const SettlementFlow: React.FC<Props> = ({ onBackToLanding, onOpenWalletM
       console.error(`${kind} failed:`, e);
       if (api === getConnectedApi()) {
         setMessage(null);
-        setError('Operation did not complete. Check wallet activity, proof assets, contract address and indexer before retrying; a transaction may already have been submitted.');
+        setError(describeTxError(e, 'Operation did not complete. Check wallet activity, proof assets, contract address and indexer before retrying; a transaction may already have been submitted.'));
       }
     } finally {
       operation.current = false;

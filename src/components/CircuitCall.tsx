@@ -3,6 +3,7 @@ import { DeployPanel } from './DeployPanel';
 import { useMidnight } from '../hooks/useMidnight';
 import { useDebtContractState } from '../hooks/useDebtContractState';
 import { callSettleDebtCircuit, type DebtPrivateState } from '../debtProviders';
+import { describeTxError } from '../txError';
 
 export const CircuitCall: React.FC<{ onBackToLanding: () => void }> = ({ onBackToLanding }) => {
   const { getConnectedApi, isConnected } = useMidnight();
@@ -28,7 +29,7 @@ export const CircuitCall: React.FC<{ onBackToLanding: () => void }> = ({ onBackT
       await refetch();
     } catch (e) {
       console.error('settle failed:', e);
-      setMessage('Settlement did not complete. Check wallet activity and refresh the indexer before retrying.');
+      setMessage(describeTxError(e, 'Settlement did not complete. Check wallet activity and refresh the indexer before retrying.'));
     } finally {
       busy.current = false;
       setPending(false);

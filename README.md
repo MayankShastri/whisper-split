@@ -4,7 +4,7 @@
 
 > A privacy-preserving expense settlement and payroll dApp on the Midnight Network. Built cumulatively across the Midnight Builder Challenge: Level 1 (private debt settlement circuit), Level 2 (Lace wallet on Preprod wired to the frontend), Level 3 (private payroll split with Merkle-based claims), and Level 4 (MVP: in-app allocation builder, multi-pool payroll contract, safety confirmations, and a plain-English usage guide) — all in one codebase.
 
-**Product:** X: [@WhisperSplit](https://x.com/WhisperSplit) <!-- TODO: confirm X handle -->
+**Product:** X: [@WhisperSplit](https://x.com/WhisperSplit)
 
 ## Live Demo
 

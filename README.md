@@ -34,7 +34,7 @@ Full step-by-step guide for admins and participants: **[docs/USAGE.md](docs/USAG
 | --- | --- | --- |
 | Preprod | Level 1/2 debt (`debt.compact`) | `7be56003e58b9f442707b87ba31482638e0629aded447676a401507cbd8c9848` |
 | Preprod | Level 3 split (`split.compact`, previous single-pool version) | `8242eb8ae69b78e2aadc86ff074eb0bf8f19bdb8425f7fd4c6ef6c0a7b2bff9d` |
-| Preprod | Level 4 multi-pool split (`split.compact`) | `TODO_LEVEL4_CONTRACT_ADDRESS` |
+| Preprod | Level 4 multi-pool split (`split.compact`) | `96386ad83563798395c3b2ed8688e367291cb11a4377537359eda5a58b9330d7` |
 
 Level 1/2 debt deployment evidence — deploy and a real `settleDebt()` call, both independently confirmed on the Preprod explorer:
 
@@ -50,13 +50,13 @@ Level 3 split deployment evidence — a full, independently verified deposit →
 
 Both participants claimed independently, each only ever proving and revealing their own share — the two claim transactions never disclose anything about the other participant's amount.
 
-Level 4 multi-pool split deployment evidence (pending — not yet deployed or verified on-chain):
+Level 4 multi-pool split deployment evidence — a full, independently verified deposit → two private claims round trip moving real unshielded NIGHT on the multi-pool contract:
 
-- Deploy tx: `TODO_LEVEL4_DEPLOY_TX`
-- Deposit tx (pool 1): `TODO_LEVEL4_DEPOSIT_TX_1`
+- Deploy tx: [`e6556cd07b5da491d1e33babf219ef2cfa83140e468b6054896e1cde974ca19f`](https://preprod.midnightexplorer.com/transactions/e6556cd07b5da491d1e33babf219ef2cfa83140e468b6054896e1cde974ca19f)
+- Deposit tx (pool 1, 80 base units): [`6eb2e4710ed03da5aaba4701fe0fb1220cd8f33d5be88f63e7449a2c7d755b53`](https://preprod.midnightexplorer.com/transactions/6eb2e4710ed03da5aaba4701fe0fb1220cd8f33d5be88f63e7449a2c7d755b53)
 - Deposit tx (pool 2, same contract): `TODO_LEVEL4_DEPOSIT_TX_2`
-- Claim tx, participant 1: `TODO_LEVEL4_CLAIM_TX_1`
-- Claim tx, participant 2: `TODO_LEVEL4_CLAIM_TX_2`
+- Claim tx, participant 1 (50 base units): [`662eea8cd9d9c0853a37990d23ad625ac5a17a2e4a01db512e77385495358a42`](https://preprod.midnightexplorer.com/transactions/662eea8cd9d9c0853a37990d23ad625ac5a17a2e4a01db512e77385495358a42)
+- Claim tx, participant 2 (30 base units): [`81d2feaaacd0446e08bccc0c06e4922e3ef4502c7ba1ada58c55a7b961f3de97`](https://preprod.midnightexplorer.com/transactions/81d2feaaacd0446e08bccc0c06e4922e3ef4502c7ba1ada58c55a7b961f3de97)
 
 ## What This Does
 
@@ -240,9 +240,9 @@ Shared expenses are personal: who owes what shouldn't be broadcast to the group,
 
 ### Level 4
 
-- [ ] Working MVP live on Preprod with verifiable contract address (Level 4 multi-pool contract not yet deployed — `TODO_LEVEL4_CONTRACT_ADDRESS`)
+- [x] Working MVP live on Preprod with verifiable contract address (Level 4 multi-pool contract `96386ad83563798395c3b2ed8688e367291cb11a4377537359eda5a58b9330d7`)
 - [x] Documentation: README + setup + usage ([docs/USAGE.md](docs/USAGE.md))
 - [x] CI/CD running (`.github/workflows/ci.yml` on `master`)
-- [ ] Product X profile linked in README (handle to be confirmed)
+- [x] Product X profile linked in README ([@WhisperSplit](https://x.com/WhisperSplit))
 - [ ] Demo video
-- [x] 15+ meaningful commits (35 total)
+- [x] 15+ meaningful commits (40+ total)

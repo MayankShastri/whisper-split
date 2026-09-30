@@ -195,7 +195,7 @@ See [PROPOSAL.md](PROPOSAL.md).
 
 - Level 2 (wallet connect + circuit call): [https://youtu.be/JYeGyjziAmo](https://youtu.be/JYeGyjziAmo)
 - Level 3 (payroll deposit + claim + tests + CI): [https://youtu.be/wQ-pLnrPK5E](https://youtu.be/wQ-pLnrPK5E)
-- Level 4: TODO
+- Level 4 (multi-pool payroll, in-app allocation builder, ZK claims & multi-run proof): [https://youtu.be/BVUx_i4PDWQ](https://youtu.be/BVUx_i4PDWQ)
 
 ## Initial Idea
 
@@ -248,5 +248,5 @@ Shared expenses are personal: who owes what shouldn't be broadcast to the group,
 - [x] Documentation: README + setup + usage ([docs/USAGE.md](docs/USAGE.md))
 - [x] CI/CD running (`.github/workflows/ci.yml` on `master`)
 - [x] Product X profile linked in README ([@WhisperSplit](https://x.com/WhisperSplit))
-- [ ] Demo video
+- [x] Demo video ([https://youtu.be/BVUx_i4PDWQ](https://youtu.be/BVUx_i4PDWQ))
 - [x] 15+ meaningful commits (40+ total)

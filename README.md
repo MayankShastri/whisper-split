@@ -50,13 +50,17 @@ Level 3 split deployment evidence — a full, independently verified deposit →
 
 Both participants claimed independently, each only ever proving and revealing their own share — the two claim transactions never disclose anything about the other participant's amount.
 
-Level 4 multi-pool split deployment evidence — a full, independently verified deposit → two private claims round trip moving real unshielded NIGHT on the multi-pool contract:
+Level 4 multi-pool split deployment evidence — full, independently verified deposit → two private claims round trips moving real unshielded NIGHT on the multi-pool contract across multiple distinct pools on the same contract:
 
 - Deploy tx: [`e6556cd07b5da491d1e33babf219ef2cfa83140e468b6054896e1cde974ca19f`](https://preprod.midnightexplorer.com/transactions/e6556cd07b5da491d1e33babf219ef2cfa83140e468b6054896e1cde974ca19f)
-- Deposit tx (pool 1, 80 base units): [`6eb2e4710ed03da5aaba4701fe0fb1220cd8f33d5be88f63e7449a2c7d755b53`](https://preprod.midnightexplorer.com/transactions/6eb2e4710ed03da5aaba4701fe0fb1220cd8f33d5be88f63e7449a2c7d755b53)
-- Deposit tx (pool 2, same contract): `TODO_LEVEL4_DEPOSIT_TX_2`
-- Claim tx, participant 1 (50 base units): [`662eea8cd9d9c0853a37990d23ad625ac5a17a2e4a01db512e77385495358a42`](https://preprod.midnightexplorer.com/transactions/662eea8cd9d9c0853a37990d23ad625ac5a17a2e4a01db512e77385495358a42)
-- Claim tx, participant 2 (30 base units): [`81d2feaaacd0446e08bccc0c06e4922e3ef4502c7ba1ada58c55a7b961f3de97`](https://preprod.midnightexplorer.com/transactions/81d2feaaacd0446e08bccc0c06e4922e3ef4502c7ba1ada58c55a7b961f3de97)
+- **Pool 1 (80 base units total):**
+  - Deposit tx: [`6eb2e4710ed03da5aaba4701fe0fb1220cd8f33d5be88f63e7449a2c7d755b53`](https://preprod.midnightexplorer.com/transactions/6eb2e4710ed03da5aaba4701fe0fb1220cd8f33d5be88f63e7449a2c7d755b53)
+  - Claim tx, participant 1 (50 base units): [`662eea8cd9d9c0853a37990d23ad625ac5a17a2e4a01db512e77385495358a42`](https://preprod.midnightexplorer.com/transactions/662eea8cd9d9c0853a37990d23ad625ac5a17a2e4a01db512e77385495358a42)
+  - Claim tx, participant 2 (30 base units): [`81d2feaaacd0446e08bccc0c06e4922e3ef4502c7ba1ada58c55a7b961f3de97`](https://preprod.midnightexplorer.com/transactions/81d2feaaacd0446e08bccc0c06e4922e3ef4502c7ba1ada58c55a7b961f3de97)
+- **Pool 2 (60 base units total, same deployment):**
+  - Deposit tx: [`5a4ee499ff6c5e34d319df304000afab2dea6e3b926408e36c3b28f593bdb6df`](https://preprod.midnightexplorer.com/transactions/5a4ee499ff6c5e34d319df304000afab2dea6e3b926408e36c3b28f593bdb6df)
+  - Claim tx, participant 1 (20 base units): [`db3d8dadb0cbf794dd501efe598e1b1b372e300ba48dfff3b0d9442f9840aa57`](https://preprod.midnightexplorer.com/transactions/db3d8dadb0cbf794dd501efe598e1b1b372e300ba48dfff3b0d9442f9840aa57)
+  - Claim tx, participant 2 (40 base units): [`056b85e69a1f695f26a51b9b5a249d4291afe32c7c901449d1caf950f36c4061`](https://preprod.midnightexplorer.com/transactions/056b85e69a1f695f26a51b9b5a249d4291afe32c7c901449d1caf950f36c4061)
 
 ## What This Does
 

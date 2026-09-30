@@ -103,7 +103,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
 
           <div ref={metaBadgeRef} className="max-w-md text-xs leading-relaxed text-[#F5F1E8]/60 font-mono">
             <span className="text-[#F5F1E8] font-mono block mb-1">
-              v3.0 — Shielded Custody & Distribution.
+              v4.0 — Multi-Pool Shielded Custody & Distribution.
             </span>
             Distribute team salaries, contractor payouts, and shared DAO pools on Midnight blockchain. Verifies Merkle share entitlements in zero-knowledge without revealing individual compensation amounts.
           </div>

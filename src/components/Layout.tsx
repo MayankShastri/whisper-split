@@ -40,7 +40,7 @@ export const Layout: React.FC<LayoutProps> = ({
         >
           <span>WHISPER SPLIT</span>
           <span className="text-[10px] font-mono tracking-widest uppercase text-accent bg-[#2596be]/10 px-2 py-0.5 border border-[#2596be]/20">
-            L1–L3 // PREPROD
+            L1–L4 // PREPROD
           </span>
         </button>
 
